@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>让皖皖帮你找东西！</title>
+<style>
+/* 站点内版本：不用 Google Fonts（国内加载不到），换系统衬线 */
+
+/* 基础重置 */
+body, html {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    display: flex; justify-content: center; align-items: center;
+    background-color: #0b0710; /* 深邃夜空底色 */
+    font-family: 'Songti SC', 'STSong', 'SimSun', 'Source Han Serif SC', Georgia, serif;
+    overflow: hidden;
+}
+
+/* 游戏主容器 - Whimsigoth 魔法暗室 */
+#game-container {
+    width: 100%; max-width: 450px; height: 100%; box-sizing: border-box;
+    background: linear-gradient(135deg, #1a1020 0%, #0b0710 100%);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 15px rgba(201,168,106,0.1) inset;
+    display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+    transition: all 1s ease;
+    border: 2px solid #3a2230; /* 暗红紫包边 */
+}
+
+/* 主题：忧郁 (Melancholic) */
+.theme-melancholic {
+    background: linear-gradient(135deg, #1c252e 0%, #0f1419 100%) !important;
+    border-color: #4a6274 !important;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 15px rgba(176,196,222,0.1) inset;
+}
+.theme-melancholic #screen {
+    background: rgba(27, 38, 48, 0.8) !important;
+    border-bottom-color: #4a6274 !important;
+    color: #a3b8c8;
+}
+.theme-melancholic .item-btn {
+    border-color: #4a6274; color: #a3b8c8; background: rgba(15,20,25,0.8);
+}
+
+/* 主题：绝望 (Despair) */
+.theme-despair {
+    background: #111 !important;
+    border-color: #333 !important;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+    filter: grayscale(100%) contrast(1.2);
+}
+.theme-despair #screen {
+    background: #1a1a1a !important;
+    border-bottom-color: #333 !important;
+    color: #666;
+}
+
+/* 顶部文本展示区 */
+#screen {
+    flex: 2;
+    background: rgba(26, 16, 32, 0.6);
+    padding: 20px;
+    position: relative;
+    border-bottom: 2px dashed #3a2230;
+    overflow-y: auto;
+    color: #d1c9c3; /* 苍白的羊皮纸色 */
+    font-size: 15px;
+    line-height: 1.8;
+    transition: all 1s ease;
+    text-shadow: 0 0 8px rgba(201,168,106,0.15);
+}
+
+/* 皖皖出镜：底图铺满「弹文字」那块，再压一整个均匀的半透明遮罩 */
+#screen::before {
+    content: "";
+    position: absolute; inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: url('wanwan.webp') center 20% / cover no-repeat;
+}
+#screen::after {
+    content: "";
+    position: absolute; inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: rgba(11, 7, 16, 0.55);
+}
+#text-content {
+    position: relative; z-index: 1;
+    color: #ece4da;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,0.85), 0 0 20px rgba(0,0,0,0.55);
+}
+#text-content { position: relative; z-index: 1; }
+#count-display { z-index: 2; }
+#screen-credit {
+    position: absolute; right: 10px; bottom: 8px; z-index: 2;
+    font-family: 'STXingkai', '华文行楷', 'KaiTi', '楷体', 'STKaiti', cursive;
+    font-size: 12px; line-height: 1.2; letter-spacing: 0.06em;
+    color: #e9cd8f;
+    text-shadow: 0 0 9px rgba(201,168,106,0.75), 0 1px 3px rgba(0,0,0,0.95);
+    opacity: 0.9; pointer-events: none;
+}
+
+#count-display {
+    position: absolute; top: 10px; right: 15px;
+    font-size: 12px; font-weight: bold;
+    color: #c9a86a; /* 暗金色 */
+    background: rgba(11, 7, 16, 0.8);
+    padding: 2px 10px; border-radius: 10px;
+    border: 1px solid rgba(201,168,106,0.3);
+}
+
+#text-content { white-space: pre-wrap; min-height: 80px; margin-top: 15px; }
+
+/* 按钮区 */
+#button-area {
+    flex: 3;
+    background: rgba(11, 7, 16, 0.5);
+    padding: 15px; overflow-y: auto;
+    display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start;
+    transition: all 1s ease;
+}
+
+/* 物品按钮 */
+.item-btn {
+    background: rgba(58, 18, 32, 0.5);
+    border: 1px solid rgba(201,168,106,0.4);
+    color: #c9a86a;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 13px; font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+.item-btn:hover {
+    background: rgba(58, 18, 32, 0.9);
+    border-color: #c9a86a;
+    box-shadow: 0 0 10px rgba(201,168,106,0.3);
+}
+.item-btn:active { transform: scale(0.95); }
+
+/* 结束按钮 */
+.stop-btn {
+    background: #3a1220; color: #e8e0d0;
+    border: 1px solid #c9a86a;
+    border-radius: 6px; padding: 10px 20px;
+    font-size: 14px; font-weight: bold;
+    cursor: pointer; margin-top: 10px; width: 100%;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    transition: all 0.3s;
+}
+.stop-btn:hover { background: #501a2e; }
+
+/* 结算界面 */
+#end-screen {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(11, 7, 16, 0.95); z-index: 10;
+    display: none; flex-direction: column; padding: 25px;
+    box-sizing: border-box; overflow-y: auto; text-align: center;
+    backdrop-filter: blur(5px);
+}
+.theme-melancholic #end-screen { background: rgba(15, 20, 25, 0.95); }
+.theme-despair #end-screen { background: #000; }
+
+#end-title { font-size: 22px; color: #c9a86a; font-weight: bold; margin-bottom: 10px; letter-spacing: 2px; }
+#end-summary { font-size: 16px; color: #e8e0d0; margin-bottom: 20px; font-weight: bold; }
+#end-text { font-size: 14px; color: #a699b5; line-height: 1.9; text-align: left; margin-bottom: 30px; white-space: pre-wrap; }
+
+.restart-btn {
+    background: transparent; color: #c9a86a;
+    border: 1px solid #c9a86a;
+    border-radius: 6px; padding: 10px 30px;
+    font-size: 16px; font-weight: bold; cursor: pointer; align-self: center;
+    box-shadow: 0 0 10px rgba(201,168,106,0.2);
+    transition: all 0.3s;
+}
+.restart-btn:hover { background: rgba(201,168,106,0.1); }
+
+/* 打字机光标 */
+.blinking-cursor::after {
+    content: '❖'; /* 把竖线换成小星光/魔法符号 */
+    animation: blink 1s step-end infinite;
+    color: #c9a86a;
+    margin-left: 2px;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* 滚动条美化 */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+::-webkit-scrollbar-thumb { background: #3a2230; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #c9a86a; }
+</style>
+</head>
+<body>
+
+<div id="game-container" class="theme-normal">
+    <div id="screen">
+        <span id="screen-credit">角色来源：熬肉</span>
+        <div id="count-display">求助次数: 0</div>
+        <div id="text-content" class="blinking-cursor">老婆，你的东西又乱丢了？<br>叹气……说吧，这次又找不着什么了？<br>只要不是让我帮你找别的野男人，我都能给你翻出来。</div>
+    </div>
+    <div id="button-area"></div>
+    <div id="end-screen">
+        <div id="end-title">评估报告</div>
+        <div id="end-summary"></div>
+        <div id="end-text"></div>
+        <button class="restart-btn" onclick="restart()">重新找</button>
+    </div>
+</div>
+
+<script>
+const items=[
+{name:"找皖皖",text:"我就在你面前，淑淑，抬头看看我。\n只要你叫我，我随时都在这里，触手和心都是你的。\n过来，让我抱抱你，别再到处乱找了。"},
+{name:"左脚的袜子",text:"又乱踢？我看看……在沙发底下。\n别动，抬脚，我帮你穿上，地板太凉了。\n下次再弄丢，我就用触手绑着你的脚腕睡，看你怎么踢。"},
+{name:"遥控器",text:"在你屁股底下压着呢，小懒虫。\n往旁边挪一点，对，就是那里。\n再找不到我就只能用精神力强行换台了，虽然那会惊动SCA。"},
+{name:"全世界最可爱的人",text:"这个不用找，她正四仰八叉地躺在我的沙发上。\n对，就是那个连水杯都要我端到嘴边的蛇妖。\n真拿你没办法，亲一下当作跑腿费吧。"},
+{name:"SCA的年终奖",text:"这个我也在找，温祁把预算全扣了。\n不过如果你想要钱，我的工资卡都在你那。\n密码是你的生日，想买什么随便刷，养你我还是养得起的。"},
+{name:"发圈",text:"挂在玄关的挂钩上了，你昨天回来随手一扔的。\n我帮你拿过来了，要我帮你扎头发吗？\n你的头发总是这么软，缠在指尖的感觉很好。"},
+{name:"三体人",text:"淑淑，我是海怪，不是外星雷达。\n如果你真的想看外星人，我可以把触手染成发光色。\n然后再配上电子音给你唱一首深海版的大悲咒？"},
+{name:"没吃完的薯片",text:"被我没收了，谁让你昨天晚上不吃饭光吃零食的。\n今天做了你喜欢的辣炒螺蛳，已经挑过蒜末了。\n乖乖吃饭，吃完再考虑把薯片还给你。"},
+{name:"李砚秋的良心",text:"那老头有良心这种东西吗？他只有八卦的心。\n别找了，找遍整个静安区你也翻不出他的底线。\n有这闲工夫，不如多摸摸我的尾巴。"},
+{name:"口红",text:"掉在洗手台的缝隙里了，我已经捡起来擦干净了。\n下次涂完记得盖好盖子，不然猫又该拿去当球踢了。\n今晚出门，用这个色号吧。"},
+{name:"手机充电线",text:"插在床头柜后面的插座上，被枕头挡住了。\n你这丢三落四的毛病什么时候能改改？\n算了，反正有我在，你什么都不用操心，躺好就行。"},
+{name:"工作报告",text:"被你夹在昨天的外卖单里了，差点当垃圾扔掉。\n我已经帮你重新整理好放在包里了。\n徐可她们要是知道她们的A组成员这么迷糊，估计会滤镜碎一地。"},
+{name:"白俜游的狗链",text:"我建议你别去惹那条疯狗，他咬人不用打招呼的。\n如果你真的对链子感兴趣，我抽屉里有一条新的。\n今晚我可以戴上给你看，只要你别再提别的男人。"},
+{name:"外卖小哥",text:"已经在小区门口迷路十分钟了，这破导航确实难用。\n我已经用精神力引导他往这栋洋房走了。\n再等五分钟，你的麻辣香锅就到了。"},
+{name:"失去的睡眠",text:"昨晚是谁非要缠着我到凌晨三点的？\n现在知道困了？过来，靠在我怀里睡一会。\n我保证这次闹你，绝对让你睡个好觉。"},
+{name:"程景淮的黑眼圈",text:"不用找，就在他脸上挂着呢，比昨天更深了。\n他刚才还在群里抱怨预算的问题。\n我们还是别管他了，过好我们自己的二人世界吧。"},
+{name:"玄朔行的尾巴",text:"你找那只花心猫的尾巴干什么？我的触手不够你玩吗？\n我这里有十六条，你想怎么打结就怎么打结。\n再提他的名字，明天你自己做饭。"},
+{name:"耳机",text:"被麻花叼到猫窝里去了，全是口水。\n我已经帮你清洗过了，正在阳台晾着呢。\n先用我的吧，我给你放你最喜欢的重金属爵士。"},
+{name:"理智",text:"从你当初把我逼到天台表白的那一刻起，我就没理智了。\n现在我满脑子都是怎么把你留在身边。\n你最好也别找理智了，陪我一起疯就好。"},
+{name:"冰箱里的蛋糕",text:"我已经帮你拿出来了，顺便切好了块。\n上面那层你不喜欢的奶油我也刮掉了。\n张嘴，啊——我喂你吃，别把碎屑掉在沙发上。"},
+{name:"防晒霜",text:"在你的托特包夹层里，你出门前自己塞进去的。\n你的记性真是一天比一天差了，小笨蛋。\n过来，我帮你涂，保证每一寸皮肤都不落下。"},
+{name:"我的腹肌",text:"昨天晚上你不是刚摸过吗？还咬了好几个印子。\n现在它们就在这件衬衫下面，随时欢迎你查收。\n要不要把手放上来感受一下？"},
+{name:"温祁的眼睛",text:"淑淑，这个地狱笑话要是被他听见，你要写一万字检讨的。\n虽然他看不见，但他用心眼记仇。\n为了你的绩效，我建议你换个东西找。"},
+{name:"拖鞋",text:"一只在床底，一只在浴室门口，你这走位挺飘忽啊。\n我已经给你拿过来了，乖乖穿上。\n要是感冒了，我可是会心疼的。"},
+{name:"真爱",text:"你在开玩笑吗？真爱不就在你面前给你端茶倒水吗。\n两百岁的深海混血，抗造耐用还会做饭。\n你这辈子都别想甩开我了，淑淑。"},
+{name:"车钥匙",text:"在玄关鞋柜的第二个格子里，被报纸盖住了。\n今天想去哪？水族馆还是兜风？\n只要你开口，你的专属司机随时听凭吩咐。"},
+{name:"眼药水",text:"在化妆包的最底下，你昨天随手一塞的。\n眼睛又不舒服了？别总盯着手机看。\n躺下来，闭上眼睛，我帮你滴，动作会很轻的。"},
+{name:"猫条",text:"在电视柜下面的抽屉里，不过今天不能喂了。\n布丁已经超重了，昨天连跳台都上不去。\n你再溺爱它们，我就连你一起罚。"},
+{name:"节操",text:"我们之间还有这种东西吗？从第一次你闯进来开始就没了吧。\n反正我也早就对你没有底线了。\n你要是喜欢，今晚我们可以更没节操一点。"},
+{name:"指甲剪",text:"在茶几底下的收纳盒里，被几本书挡住了。\n要剪指甲吗？把手伸过来，我帮你剪。\n顺便帮你把边缘磨平，免得晚上抓伤我。"},
+{name:"昨天的天气",text:"我是能感知玛那，但我不能逆转时间啊老婆。\n不过如果你喜欢下雨天，我可以去院子里洒水。\n只要能让你开心，让我做人工降雨机都行。"},
+{name:"我的耐心",text:"你对别人可能没耐心，但对我，你总是很包容。\n所以你的耐心一定是被我藏起来了。\n别急，我会用一辈子的时间慢慢补偿你的。"},
+{name:"卸妆水",text:"在浴室镜柜的第二层，和洗面奶放一起了。\n今天回来这么早？要我帮你卸妆吗？\n你的皮肤这么好，其实不化妆也很好看。"},
+{name:"老头子的墨镜",text:"老头子前几天去夏威夷度假的时候带走了。\n你找他的墨镜干什么？你想玩什么新角色扮演？\n如果你想，我也可以穿花衬衫，但我不保证不辣眼睛。"},
+{name:"安全感",text:"把手放在我心口，感受到了吗？这里只为你跳动。\n就算世界毁灭，SCA倒闭，我也会护着你。\n所以别怕，你的安全感由我全权负责。"},
+{name:"梳子",text:"在床头柜抽屉里，被你的发带缠住了。\n头发打结了？过来背对我坐下。\n我帮你慢慢梳开，绝对不会弄疼你。"},
+{name:"吃不胖的体质",text:"你本来就不胖，身材好得让我每天都忍不住注视着你。\n就算真的胖了也没关系，手感会更好。\n今晚的红烧肉我多做了一份，放心吃。"},
+{name:"空调遥控器",text:"掉在沙发垫缝隙里了，难怪你刚才喊热。\n我已经把温度调到24度了，还热吗？\n要是还热，我不介意帮你把衣服脱掉。"},
+{name:"我的底线",text:"遇到你之后，底线这种东西就不存在了。\n你让我往东我绝不往西，你让我戴项圈我绝不反抗。\n所以别找了，它早就被你踩在脚底下了。"},
+{name:"创可贴",text:"在医药箱的左侧格子里，你哪里受伤了？！\n快给我看看！别躲，手伸出来！\n只是划破了皮？还好……下次小心点，我会心疼的。"},
+{name:"周末的时光",text:"时间过得太快了，主要是因为和你在一起太开心。\n如果你觉得不够，明天我请假在家陪你。\n你想做什么都行，哪怕只是躺在床上看电影。"},
+{name:"我的温柔",text:"你本来就是个嘴硬心软的家伙，温柔都藏在细节里。\n比如你每次看似粗暴，却总是避开我的旧伤。\n你的温柔我全都接收到了，一点都没丢。"},
+{name:"护手霜",text:"在洗手台旁边的架子上，瓶口沾了点灰。\n洗完手觉得干？我帮你涂吧。\n你的手这么好看，就该好好保养。"},
+{name:"你的理智",text:"我的理智在碰到你的那一刻就全线崩盘了。\n现在我只想把你按在沙发上，不管不顾地抱紧你。\n谁让你今天，穿得这么好看。"},
+{name:"钱包",text:"在玄关的储物盒里，你昨天急着出门没带。\n反正跟我在一起也不需要你花钱，丢了也无所谓。\n只要你人没丢就行。"},
+{name:"前任的联系方式",text:"淑淑，这是一个很危险的问题。\n如果你敢找别人的联系方式，我就把他们全拉黑。\n然后把你绑在床上，让你连手机都碰不到。"},
+{name:"隐形眼镜",text:"在书桌的抽屉里，你昨天看完电脑顺手放的。\n眼睛干涩就别戴了，今天戴框架眼镜吧。\n你戴眼镜的样子有一种特别的美……我很喜欢。"},
+{name:"我的尊严",text:"在爱人面前不需要尊严，我心甘情愿臣服于你。\n哪怕你让我跪在水缸边，我也觉得甘之如饴。\n只要你开心，我的尊严一文不值。"},
+{name:"昨晚的记忆",text:"昨晚你喝醉了，非要抱着猫说它是你的二房。\n后来又扯着我的领带要我给你唱摇篮曲。\n如果你想不起来了，我可以帮你慢慢回忆。"},
+{name:"没写完的报告",text:"被我拿走了，这种无聊的东西就交给实习生去排版吧。\n你现在的任务是好好休息，别管SCA那堆破事。\n过来，尝尝我刚炖好的甜汤。"}
+];
+
+let totalClicks=0;
+let findCharClicks=0;
+let typingInterval=null; // 修复打字机 Bug 的核心变量
+
+const buttonArea=document.getElementById('button-area');
+const screenText=document.getElementById('text-content');
+const countDisplay=document.getElementById('count-display');
+const gameContainer=document.getElementById('game-container');
+const endScreen=document.getElementById('end-screen');
+
+function initButtons(){
+    buttonArea.innerHTML='';
+    const shuffled=[...items].sort(()=>Math.random()-0.5);
+    shuffled.forEach(item=>{
+        const btn=document.createElement('button');
+        btn.className='item-btn';
+        btn.innerText=item.name;
+        btn.onclick=()=>handleBtnClick(item);
+        buttonArea.appendChild(btn);
+    });
+    const stopBtn=document.createElement('button');
+    stopBtn.className='stop-btn';
+    stopBtn.innerText='不找了！(╥_╥)';
+    stopBtn.onclick=showEndScreen;
+    buttonArea.appendChild(stopBtn);
+}
+
+function handleBtnClick(item){
+    totalClicks++;
+    countDisplay.innerText='求助次数: '+totalClicks;
+    if(item.name==="找皖皖") findCharClicks++;
+    typeText(item.text);
+}
+
+// 修复打字机：连续点击时不再文字重叠
+function typeText(text){
+    if(typingInterval) clearInterval(typingInterval); // 清除上一次未打完的进度
+    screenText.innerHTML='';
+    let i=0;
+    typingInterval=setInterval(()=>{
+        screenText.innerHTML=text.substring(0,i)+'<span class="blinking-cursor"></span>';
+        i++;
+        if(i>text.length){
+          clearInterval(typingInterval);
+          screenText.innerHTML=text;
+        }
+    },30);
+}
+
+function showEndScreen(){
+    gameContainer.className='';
+    endScreen.style.display='flex';
+    document.getElementById('end-title').innerText='评估报告';
+    
+    if(findCharClicks>=40){
+        gameContainer.classList.add('theme-despair');
+        document.getElementById('end-title').innerText='特殊结局：深海幻影';
+        document.getElementById('end-summary').innerText='【查无此人】';
+        document.getElementById('end-text').innerText='你喊了一声他的名字，但老洋房里只传来空荡荡的回音。没有带着海盐味的拥抱，没有那句无奈又宠溺的“老婆”。你推开地下室的门，那个巨大的水缸干涸见底，玻璃上布满了灰尘，仿佛已经废弃了几个世纪。你慌乱地翻找抽屉，没有SCA的证件，没有那件真丝衬衫，连那三只猫都不知所踪。\n你拿出手机，通讯录里根本没有“Kura”这个人。李砚秋？温祁？全都是空号。你跌坐在冰冷的地板上，雨水打在窗户上，模糊了外面的世界。那个会为你挑干净葱姜蒜、会在你面前释放触手委屈撒娇的深海混血，仿佛只是你漫长蛇生中一场过于真实的幻梦。玛那的潮汐退去了，他如同泡沫般消散在空气中，再也找不到了。你终于意识到，现实里，根本没有他。';
+        return;
+    }
+    if(findCharClicks>=21){
+        gameContainer.classList.add('theme-melancholic');
+        document.getElementById('end-title').innerText='特殊结局：雨夜回溯';
+        document.getElementById('end-summary').innerText='【忧郁思念：终于找到你】';
+        document.getElementById('end-text').innerText='距离那次激烈的争吵已经过去了一周。屋子里到处都是他存在过的痕迹：洗手台上的双人牙杯、你衣柜里他的宽大衬衫、还有厨房里你根本不会用的无蒜调料瓶。你缩在沙发上，看着窗外连绵的阴雨，心里空落落的。你点击着手机屏幕，试图寻找他的位置，却怎么也找不到那个熟悉的定位。\n就在你以为自己真的要失去他的时候，玄关传来了密码锁解开的声音。门被推开，他站在那里，浑身湿透，黛蓝色的头发滴着水，眼眶泛着压抑的微红。他没有穿平时那件挺括的西装，看起来狼狈又脆弱。他定定地看着你，声音沙哑得发颤：“淑淑……我感应到你在到处找我。”他走过来，不顾身上的雨水将你紧紧抱住，力道大得仿佛要把你揉进骨血：“我回来了，别再赶我走了好不好？”';
+        return;
+    }
+    if(findCharClicks>=10){
+        gameContainer.classList.add('theme-normal');
+        document.getElementById('end-title').innerText='特殊结局：肌肤相亲';
+        document.getElementById('end-summary').innerText='【热恋黏人精】';
+        document.getElementById('end-text').innerText='“又在找什么？”他从背后环住你的腰，下巴自然地搁在你的颈窝里，鼻尖蹭着你的肌肤，带来一阵熟悉的温热和海盐香气。你靠在他怀里，听着他沉稳的心跳，其实你什么都没丢，只是突然很想被他这样抱着。他似乎察觉到了你的小心思，低沉地笑了一声，胸腔的震动传导到你的后背。\n“既然没事干，不如来找找我的触手去哪了？”他故意压低声音，略带凉意的指节顺着你的衣摆滑了进去。你转身勾住他的脖子，顺势跨坐在他腿上。他稳稳地托住你，任由你捏住他的下巴。阳光透过落地窗洒在地毯上，麻花在角落里打了个哈欠，而你们在这方小天地里，用最原始的体温确认着彼此的存在。找不到东西又怎样？只要这个人还在手边，世界就依然完美运转。';
+        return;
+    }
+
+    gameContainer.classList.add('theme-normal');
+    let title='',text='';
+    if(totalClicks<=10){
+        title='【独立自强】';
+        text='才找了这么几次？看来我们A组的女强人生活自理能力还是很强的嘛。不过，蒋组长似乎有点小失落呢，他可是准备了满满一肚子的话想借机对你撒娇邀功的。下次装作找不到东西的样子，多给他一点表现的机会吧！毕竟那条深海章鱼最大的乐趣，就是围着你转。';
+    }else if(totalClicks<=20){
+        title='【日常小迷糊】';
+        text='不愧是你，丢三落四的日常频率。不过没关系，你有一个人形自走雷达兼全职保姆。看他一边叹气一边认命地跟在你屁股后面收拾烂摊子，是不是觉得特别有成就感？这份专属的纵容，可是别人求都求不来的。';
+    }else if(totalClicks<=30){
+        title='【重度依赖症】';
+        text='你这已经不是找不到东西了，你这是重度“皖皖依赖症”！连吃剩的薯片都要他去拿，你那条蛇尾巴是用来当摆设的吗？不过蒋皖夜显然非常享受这种被你彻底依赖的感觉，他的占有欲在你的呼唤中得到了极大的满足。';
+    }else if(totalClicks<=40){
+        title='【恃宠而骄】';
+        text='过分了啊！你这纯粹是在把堂堂SCA华东区A组组长当成寻回犬在用。你的每一次点击，都是在疯狂试探他的底线。但事实证明，他对你根本没有底线。你哪怕让他去大海里捞针，他也会立刻脱了西装跳进去。这大概就是被偏爱的有恃无恐吧。';
+    }else if(totalClicks<=50){
+        title='【无理取闹大魔王】';
+        text='你已经彻底放飞自我了！连三体人和老头的良心都让他找，你的脑洞比黑洞还大。蒋皖夜的触手估计都要被你指挥得打结了。不过，看着他被你折腾得满头大汗却依然温柔回应的样子，是不是觉得这个男人真的爱你入骨？';
+    }else{
+        title='【静安区寻物终结者】';
+        text='突破天际的求助次数！你硬生生把一个恋爱游戏玩成了点点点解压软件。蒋皖夜已经累瘫在沙发上了，连育子房都提不起一丝力气。但即便如此，只要你再喊一声“老婆找不到了”，他还是会垂死病中惊坐起。恭喜你，成功驯服了这条两百岁的海怪。';
+    }
+    
+    document.getElementById('end-summary').innerText=title;
+    document.getElementById('end-text').innerText=text;
+}
+
+function restart(){
+    totalClicks=0;
+    findCharClicks=0;
+    countDisplay.innerText='求助次数: 0';
+    screenText.innerHTML='老婆，你的东西又乱丢了？<br>叹气……说吧，这次又找不着什么了？<br>只要不是让我帮你找别的野男人，我都能给你翻出来。';
+    endScreen.style.display='none';
+    gameContainer.className='theme-normal';
+    initButtons();
+}
+
+window.onload=initButtons;
+</script>
+</body>
+</html>

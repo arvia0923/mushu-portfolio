@@ -120,6 +120,7 @@
 }
 
 .masthead__brand {
+  position: relative;
   display: grid;
   gap: 0.15em;
   color: var(--text-100);
@@ -135,15 +136,52 @@
 }
 .masthead__glyph svg { display: block; }
 .masthead__name {
-  font-size: clamp(1.1rem, 2.2vw, 1.55rem);
+  font-family: var(--font-hand);          /* 手写体，像签名 */
+  font-size: clamp(1.25rem, 2.5vw, 1.8rem); /* 再大一号（原 1.1~1.55rem） */
   letter-spacing: 0.16em;
   line-height: 1.1;
 }
 .masthead__role {
   font-family: var(--font-body);
-  font-size: var(--step--1);
+  font-size: 0.6875rem;                     /* 再小一号（原 0.75rem） */
   letter-spacing: 0.2em;
   color: var(--text-300);
+}
+
+/* 站点视图（作品 / 关于 / 联系）：站名像案台角落的一盏小灯 ——
+   外轮廓发光、柔和光晕；首页是大月亮，不跟它抢。 */
+.masthead__brand::after {
+  content: "";
+  position: absolute;
+  inset: -55% -34% -45% -42%;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(closest-side,
+    rgba(201, 168, 106, 0.20) 0%,
+    rgba(201, 168, 106, 0.07) 52%,
+    rgba(201, 168, 106, 0) 78%);
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+.masthead__brand > * { position: relative; z-index: 1; }
+.is-view-site .masthead__brand::after { opacity: 1; }
+.is-view-site .masthead__brand {
+  text-shadow:
+    0 0 9px rgba(233, 203, 140, 0.40),
+    0 0 28px rgba(201, 168, 106, 0.26),
+    0 1px 14px rgba(0, 0, 0, 0.85);
+}
+.is-view-site .masthead__glyph {
+  filter:
+    drop-shadow(0 0 8px rgba(242, 216, 160, 0.72))
+    drop-shadow(0 0 24px rgba(201, 168, 106, 0.42));
+}
+.is-view-site .masthead__name {
+  text-shadow:
+    0 0 10px rgba(233, 203, 140, 0.55),
+    0 0 34px rgba(201, 168, 106, 0.34),
+    0 1px 14px rgba(0, 0, 0, 0.85);
 }
 
 /* ── 导航 ───────────────────────────────────────────────
@@ -481,6 +519,12 @@
   height: 1px;
   background: linear-gradient(to right, var(--gold), transparent);
   animation: cueSlide 2.8s var(--ease-soft) infinite;
+}
+.scroll-cue__text {
+  font-family: var(--font-hand);   /* 和站名同一支笔 */
+  letter-spacing: 0.18em;
+  color: var(--text-100);
+  opacity: 0.82;
 }
 @keyframes cueSlide {
   0%, 100% { transform: translateX(0); opacity: 0.35; }

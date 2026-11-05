@@ -1430,3 +1430,552 @@ Cloudflare Pages 的**构建并发是 1** —— 同一时间只跑一个构建�
 - 控制台 **0 报错**（只有 three r160 UMD 的预期弃用警告）
 - 退场后 3D 牌面**已经带着照片** —— 看不到那张突兀的扁平照片了 ✅
 
+## 二十二、作品区重做：「牌桌」—— 牌堆 / 抽卡 / 悬停翻面（2026-11-05，已实测，**暂未上线**）
+
+### 改了什么
+
+作品区不再是「九张牌的网格列表」，改成占卜桌布上的一副牌：
+
+| 阶段 | 画面 | 实现 |
+|---|---|---|
+| 1 · 牌堆 | 桌布中央摆着两摞牌，每一摞 = 一个作品类别 | `config.js` 的 `deck.piles` → `deck.js` 生成按钮 |
+| 2 · 发牌 | 选中的那摞**飞到视口最上方**，只露下半截当「发牌器」；其它牌堆向两侧滑出淡出；卡牌依次从发牌器抽出，错开延迟，码成网格 | FLIP（`getBoundingClientRect` + 反向 `transform`）+ `transition-delay` |
+| 3 · 翻面 | 卡牌默认卡背朝上，悬停 `rotateY(180deg)` 翻出封面；**翻转瞬间从卡牌边缘迸出金色流沙**；移开翻回，再次触发 | CSS `perspective` + `preserve-3d` + 手写 canvas 粒子 |
+
+### 卡片比例为什么定成 9:16
+
+素材两边比例不一样，这是本轮最需要拍板的地方：
+
+| 素材 | 原始尺寸 | 比例 |
+|---|---|---|
+| `素材·塔罗牌背.png` | 1152×2048 | **9:16**，满幅、带完整外框 |
+| `assets/covers/*.jpg`（9 张封面） | 1200×1600 | **3:4**，同样是带完整金边的塔罗卡设计 |
+
+两张都是「完整的一张卡」，**裁哪边都会把外框切掉**。实测对比三种方案后选了 9:16：
+
+- **牌背裁成 3:4**（上下各切 12.5%）→ 上下边框线断在半空，最难看的方案 ❌
+- **牌背 contain 进 3:4**（左右留黑边）→ 像「小卡嵌在大卡里」，有厚度感 ❌（明确不要厚度）
+- **卡背保持 9:16 满幅 + 封面裁成 9:16**（左右各切 12.5%）→ 牌背纹样一点不损；
+  九张封面裁完实测反而更干净（去掉两侧繁复边饰，像电影海报）✅
+
+结论：**卡牌 = 9:16**。封面是 3:4，用 `object-fit: cover` 裁两侧。
+（牌背是所有卡牌**共用一张**的，浏览器只会请求一次。）
+
+### 原生等价实现（没有引第三方库）
+
+站点是 vanilla + 经典 script + 全局命名空间、无构建步骤，所以提示词里的 React 生态全部用原生等价物替掉了：
+
+| 想用的 | 实际怎么做的 |
+|---|---|
+| `layoutId` 平滑移动 | **FLIP**：先量旧位置 → 摆到新位置 → 反向 `transform` 摆回去 → 过渡到 `transform: none` |
+| `staggerChildren` | `transition-delay` 逐张递增（`config.js` 的 `deck.stagger`，默认 76ms） |
+| `rotateY(180deg)` 翻面 | `.tcard { perspective }` + `.tcard__inner { transform-style: preserve-3d }` + `backface-visibility: hidden` |
+| `@tsparticles` 金色星尘 | `assets/js/dust.js` —— 手写 canvas 粒子（**零依赖**） |
+
+### 金色流沙粒子（`assets/js/dust.js`）
+
+- 一个全屏固定 `<canvas>` + 一个粒子数组 + 一个 rAF 循环
+- **没有粒子时自动停掉 rAF**（不空转、不耗电）
+- 粒子从卡牌**四条边**随机撒点，朝外飞，带轻微上扬、阻尼、横摆和重力 → 慢慢飘散、淡出
+- 颜色取 `--gold`（暗金），叠加模式 `lighter` → 有辉光感；20% 的大颗粒带径向光晕
+- 悬停和移开**各触发一次**（「移开则翻回并再次触发」）
+
+### 顺手修掉的一个坑：Email 变长会撑破卡背
+
+工作牌卡背的 Email 补上 `@qq.com` 后，字数从 18 个变成 27 个。
+而卡背文字是**固定字号**画的（`W * 0.055` + `W * 0.010` 字距），量了一下：
+
+| 文案 | 占牌宽 |
+|---|---|
+| `Email: 1034136944` | ~64% |
+| `Email: 1034136944@qq.com` | **~97%** ← 两边快贴到牌沿了 |
+
+解法：给卡背文字加一层**按宽度自动收字号**（`lanyard.js` 的 `drawFitted()`）——
+先量整行宽度，超出上限就按比例把字号和字距一起缩下去。
+
+```js
+function drawFitted(ctx, text, cx, y, weight, size, family, tracking, maxW, align) {
+  ctx.font = ...;
+  var w = trackedWidth(ctx, text, tracking);
+  if (maxW && w > maxW) {            // 太宽 → 按比例收
+    var k = maxW / w;
+    size = size * k; tracking = tracking * k;
+    ctx.font = ...;
+  }
+  return drawTracked(ctx, text, cx, y, tracking, align);
+}
+```
+
+每行单独设上限（kicker 0.80 / 标题 0.82 / 提示 0.82 / **Email 0.76** / 页脚 0.80），
+所以除了 Email，其它几行的排版**一点没变**。以后再改文案也不会撑出牌面。
+
+### 顺手修掉的另一个坑：卡面不再叠悬停预览视频
+
+旧的作品列表里，卡片悬停会叠一层静音视频预览。这轮**默认关掉了**
+（`config.js` 的 `deck.hoverPreview: false`），三个理由：
+
+1. **用户要的就是「卡面 = 作品封面」**，不是视频
+2. **首帧会闪**：ffmpeg 量过三支片子的首帧平均亮度 ——
+   `work-05` 是 **0.002（纯黑）**、`work-03` 是 **255（纯白）**、`work-01` 是 146（正常）。
+   翻面瞬间叠上去就是「卡面黑一下 / 白一下」
+3. **加载流畅**：悬停就开始下视频（最大的那个 19.5MB），跟「加载流畅」冲突
+
+现在卡面只有封面；**点卡牌进灯箱照常全屏放映**。
+想开的话把 `hoverPreview` 改成 `true` —— 代码里也加了保护：
+视频 `canplay` 之后才淡入（`poster` 先垫着封面），但首帧闪烁依然存在。
+
+### 新增 / 改动清单
+
+| 文件 | 说明 |
+|---|---|
+| `assets/js/dust.js` | **新增** · 金色流沙粒子系统（手写 canvas，零依赖） |
+| `assets/js/deck.js` | **重写** · 牌堆 → 发牌器 → 抽卡 → 悬停翻面 |
+| `assets/css/deck.css` | **重写** · 牌堆 / 发牌器 / 卡牌正反面 / 翻转 / 空状态 |
+| `assets/js/config.js` | `deck.piles` / `backImage` / `stagger` / `deal` / `flip` / `dealerW`；**`lanyard.backEmail` 补上 `@qq.com`** |
+| `assets/js/lanyard.js` | 卡背文字加**自动收字号**（见下） |
+| `index.html` | `#deck` 区段改成「舞台 + 牌堆 + 牌桌」结构；加粒子 `<canvas>`；引入 `dust.js` |
+| `assets/deck/pile-a.webp` | **新增** · 坐猫堆（视频作品），512×683，带 alpha，90KB |
+| `assets/deck/pile-b.webp` | **新增** · 漂浮猫堆（待发的一摞），512×683，带 alpha，83KB |
+| `assets/deck/card-back.webp` | **新增** · 塔罗牌背，600×1067，155KB |
+
+### 素材处理（ffmpeg）
+
+原始素材 10MB+ 全部转成 WebP，页面只加载 ~330KB：
+
+```
+# 牌堆图标（保留 alpha）
+ffmpeg -i "抠图 (2).png" -vf "scale=512:683:flags=lanczos" -c:v libwebp -quality 92 assets/deck/pile-a.webp
+
+# 牌背（无 alpha）
+ffmpeg -i "素材·塔罗牌背.png" -vf "scale=600:1067:flags=lanczos" -c:v libwebp -quality 90 assets/deck/card-back.webp
+```
+
+用 `alphaextract + signalstats` 验证过四个角的 alpha = 0（抠图干净，没有白边残留）。
+
+### 交互细节（都是实测过的）
+
+- **牌堆悬停**：沿轮廓的 drop-shadow 暗金光变亮、内里压暗、中间文字高亮成暖金
+- **发牌**：选中的牌堆本体淡出、发牌器接手（无缝交接）；其余牌堆 `translateX(±130vw)` + 淡出
+- **发牌期间不吃悬停**（`hoverLock` 2.6 秒）—— 否则鼠标正好压在牌堆原位，
+  落下来的牌会立刻自己翻起来
+- **触屏**：第一次点翻面，第二次点进灯箱（`matchMedia('(hover: none)')` 分流）
+- **空牌堆**：点第二摞 → 同样飞成发牌器，桌面显示「这一摞还没有发牌 / 正在酝酿中」
+- **回到牌桌**：牌桌上方一个按钮，收起牌阵、牌堆滑回原位，并**滚回作品区顶部**
+  （`block: 'start'` + `.deck` 上现成的 `scroll-margin-top`，和导航锚点同一套偏移——
+  早先写成 `block: 'center'` 滚牌堆，会把「牌桌」标题顶到固定导航底下压着）
+- **发牌器压在卡牌上**：发牌器钉在视口顶上，牌阵滚上去会从它底下过；
+  给它垫了一层 `radial-gradient` 暗底光晕（`.deck__dealer::before`，`z-index: -1`），
+  被压住的标题沉进背景，而不是被齐刷刷切掉一半
+- **灯箱**：点卡牌 → 全屏放映 + 作品档案（背景 / 做法 / 反思）不变
+
+### 实测数据
+
+- 控制台 **0 报错**（只有 three r160 UMD 的预期弃用警告）
+- 卡背 `card-back.webp` **只请求 1 次**（9 张卡共用）
+- 9 个作品视频**没有预载**（`preload="none"`），只有点开灯箱的那一个才下载
+- 粒子：为了截到图，临时把寿命拉到 26 秒确认渲染正常（常规寿命 2.2~4 秒，肉眼可辨）
+
+### 还没上线
+
+本轮**只改本地，没有 commit / push**。等看完效果满意了再一起上线。
+
+---
+
+## 二十三、六项返修（2026-11-06，已实测，**暂未上线**）
+
+上一轮做牌桌时留了六个口子，这一轮一次补齐。
+
+### 1 · 站名改手写体，副标小一号，站点视图里亮成一盏小灯
+
+- `tokens.css` 新增 `--font-hand`：优先「华文行楷」（Windows 自带），
+  没有就退到楷体 / 仿宋。仍然只用系统字体，不引外链字体。
+- `.masthead__name` 换 `--font-hand`，**字号不变**（`clamp(1.1rem, 2.2vw, 1.55rem)`）
+- `.masthead__role`（AIGC · 影像 · 视觉实验）从 `var(--step--1)`（0.8125rem）
+  改成 **0.75rem**，小一号
+- **只在站点视图发光**：`.is-view-site` 是 `views.js` 加在 `<html>` 上的，
+  首页（`is-view-hero`）不亮，免得跟首页那轮大月亮抢戏
+  - `牧舒` 三层 text-shadow：近光 + 远光 + 原本的压底黑
+  - 月亮图标换成两层 drop-shadow
+  - 站名后面垫一块 `radial-gradient` 暖光晕（`.masthead__brand::after`），
+    像案台角落的一盏小灯
+
+### 2 · 牌堆飞行路径：病根是 FLIP 起点算错了
+
+早先的 FLIP 是这样算的：
+
+```js
+var last = this.dealer.getBoundingClientRect();   // ← 量的是"终点"
+var dx = first.left - last.left;                   // ← 拿终点去减起点
+```
+
+发牌器是 `position: fixed`，**自然位置**在 `(0, 0)`，终点 transform 是
+`translate(fx, fy)`。拿终点 rect 去减，起点整整偏了一个 `(fx, fy)` ——
+牌堆不是从自己身上出发，而是从**视口左外侧偏下**冲出来，再一路往右上
+冲到视口中间。两摞牌都是这个方向，所以看起来像"先滑到右上方"。
+
+修法：起点和终点都相对"自然位置"算。
+
+```js
+this.dealer.style.transform = 'none';
+var base = this.dealer.getBoundingClientRect();     // 自然位置 (0, 0)
+var startX = first.left - base.left;                // = 牌堆现在的位置
+var endX   = endLeft  - base.left;                  // = 视口水平居中
+```
+
+另外，飞行原本用 `EASE = cubic-bezier(.18,.78,.2,1)` —— 强 ease-out，
+前 20% 的时间冲掉 80% 的距离，后面再慢慢挪，看起来像"两个动作"。
+单独给飞行换了一条 **Material 标准曲线 `cubic-bezier(.4,0,.2,1)`**
+（缓入 → 匀速 → 缓出），一口气滑到正上方。
+
+### 3 · 灯箱窄屏改回上下堆叠
+
+`.lightbox__stage` 一直是
+`grid-template-columns: minmax(0,1.25fr) minmax(18rem,.75fr)`，
+右栏最少 288px —— 手机上（393px 宽）右栏把左栏挤成一条缝。
+
+`@media (max-width: 900px)` 里改成：
+
+```css
+.lightbox { place-items: start center; overflow-y: auto; }
+.lightbox__stage { grid-template-columns: minmax(0, 1fr); max-height: none; }
+.lightbox__video { max-height: 56vh; }
+.lightbox__info { max-height: none; overflow: visible; }
+```
+
+窄屏 = 上面视频、下面作品档案（可滚动）；宽屏仍是左视频右信息。
+
+### 4 · 卡面改回旧版：顶部信息带 + 完整 3:4 封面 + 底部文字带
+
+之前卡面只有一张被裁成 9:16 的封面，文字挤在下面一条。
+现在按老版本重排（`deck.js` 的 `buildCard` + `deck.css` 的 `.tcard__face`）：
+
+```
+┌────────────────────┐
+│ Ⅰ        动画 / 知识短片 │  ← 顶部信息带
+├────────────────────┤
+│     完整的 3:4 封面    │  ← 封面自带金边花框，一格不裁
+├────────────────────┤
+│ 笔的三千年演化        │  ← 底部文字带
+│ 2026 · 1080×1920 · 竖版 │
+└────────────────────┘
+```
+
+- `.tcard__fpic` 用 `aspect-ratio: 3 / 4` + `object-fit: cover` ——
+  面积正好 3:4，所以 cover 也裁不到东西
+- 卡面底色改回深紫蓝（`#241b3c → #16111f → #1d1634`）+ 顶部一道紫晕，
+  和旧版塔罗卡一个调子
+
+### 5 · 金砂重调：细碎、暗多亮少
+
+按提示词把粒子分成三档：
+
+| 档 | 占比 | 半径 | 不透明度 | 画法 |
+|---|---|---|---|---|
+| 暗金沙砾 | 80% | 1.0~1.9px | 0.30~0.52 | 纯色小点，只铺底 |
+| 中调金 | 15% | 0.7~1.35px | 0.58~0.78 | 稍亮的小星点 |
+| 高光 | 5% | 0.45~0.95px | 0.85~1.0 | 径向光晕 + **偶尔闪一下**（正弦取正、六次方 → 尖峰） |
+
+- 暗的颗粒比亮的大、亮的比暗的小 —— 和"衬"的关系反着来
+- **速度整体快 1.5 倍**：`LIFE` 2.2~4.0s → **1.4~2.6s**，
+  `GRAVITY` 26 → **39**，同时 `DRAG` 1.4 → **1.9**（阻尼大一点才飘得轻盈）
+- 出边速度从 14~54 降到 **10~38**：轻盈，不炸开
+- 数量按周长算：`(w+h)/4`，30~130 粒；上限 `MAX` 提到 1200
+
+### 6 · 首页左下角「向下滚动」→「✦ 循此入梦 ✦」
+
+文字换成同款手写体（`--font-hand`），和站名一个笔触。
+
+### 本轮实测
+
+- 控制台 **0 报错**（诊断日志已全部清掉）
+- 牌堆飞行：慢放到 20 秒逐帧核对，路径是**一条直线**（牌堆原位 → 视口正上方），
+  不再有"先右上再归位"
+- 卡面：悬停翻面后是完整的 3:4 封面 + 上下两条文字带
+- 灯箱：674px 宽下是上面视频、下面档案，页面可滚动
+- 粒子：先把粒子临时放大到 8px 确认渲染管线正常（130 粒、canvas 674×691），
+  再按新参数收细；常规尺寸下是细碎的一层薄沙
+
+### 还没上线
+
+本轮**仍然只改本地，没有 commit / push**。
+
+---
+
+## 二十四 · 四项返修（2026-11-06，已实测，暂未上线）
+
+### 1 · 未选中的牌堆按「相对位置」退场
+
+早先的判断写反了：`k.compareDocumentPosition(btn) & FOLLOWING` 的含义是
+「**btn 在 k 之后**」，变量名却当成「k 在 btn 之后」用 ——
+右边那摞于是被判成 `-130vw`，横穿被选中的牌堆，看着就像被撞飞。
+
+现在改成按**视口上的左右位置**判断（`deck.js` 的 `select()`）：
+
+```js
+var selLeft = btn.getBoundingClientRect().left;
+...
+var goLeft = k.getBoundingClientRect().left < selLeft;   // 未选中的在选中左边？
+k.style.setProperty('--out-x', (goLeft ? -1 : 1) * 150 + 'vw');
+```
+
+| 选中的牌堆 | 未选中的那摞 | `--out-x` | 方向 |
+|---|---|---|---|
+| 左边（观影） | 右边（互动） | `150vw` | 往**右**飞 |
+| 右边（互动） | 左边（观影） | `-150vw` | 往**左**飞 |
+
+**谁也不会横穿被选中的牌堆。**
+
+### 2 · 粒子再细 10%、再密 10%、消散再快 20%
+
+`assets/js/dust.js`：
+
+| 参数 | 上一版 | 这一版 | 变化 |
+|---|---|---|---|
+| 暗金沙砾半径 | 1.0~1.9px | **0.9~1.71px** | ×0.9 |
+| 中调金半径 | 0.7~1.35px | **0.63~1.215px** | ×0.9 |
+| 高光半径 | 0.45~0.95px | **0.405~0.855px** | ×0.9 |
+| 数量 | `(w+h)/4`，30~130 | **`(w+h)/3.6`，33~143** | ×1.1 |
+| 存活 `LIFE` | 1.4~2.6s | **1.12~2.08s** | ×0.8（消散快 20%） |
+| 重力 `GRAVITY` | 39 | **47** | ×1.2（滑落更利落） |
+| 上限 `MAX` | 1200 | **1320** | 跟得上更密的粒子 |
+
+### 3 · 「视频作品」→「观影」，「待发的一摞」→「互动」+ 新增互动作品
+
+**牌堆改名**（`config.js`）：
+
+| id | 名字 | 英文 | 张数 | 收录 |
+|---|---|---|---|---|
+| `video` | **观影** | SCREENINGS | 9 | 九件视频作品（`include` 白名单） |
+| `interactive` | **互动** | INTERACTIVE | 1 | 陪伴式工作 |
+
+原来 `video` 这一摞不写 `include` 就是「全部作品」，
+新增互动作品后必须把九件视频作品列进白名单，否则互动那张牌会混进观影里。
+
+**新增第 10 件作品「陪伴式工作」**（`works.js`）——
+它没有视频，多一个 `interactive` 字段：
+
+```js
+interactive: {
+  html: 'assets/deck/companion-work.html',
+  cover: 'assets/deck/yesterday-death.webp',
+  credit: '图源：昨日死'
+}
+```
+
+**卡面**：`buildCard()` 里给互动作品单开一支，`.tcard__bleed` 用
+`昨日死` 原图**铺满整个卡面**（不裁 3:4），右下角 `.tcard__credit`
+注明「图源：昨日死」，用 `--font-hand` 烫金行楷 + 三层发光。
+只有一张牌时 `.deck__grid.is-single` 把它摆到网格正中（不然会贴着左边站）。
+
+**点开弹灯箱**：`.lightbox__embed` 是一个 **2:3 的细框**
+（`height: min(82vh, 33rem, 138vw); aspect-ratio: 2 / 3`），
+里面一个 iframe 跑 `assets/deck/companion-work.html`。
+视频作品走原来的 `<video>`，互动作品走 iframe，灯箱同一套左右两栏布局。
+
+**`companion-work.html` 是副本**：从
+`C:\Users\dell\Pictures\ai\午夜风铃\陪伴式工作.html` 改的 ——
+原文件是 HTML 片段（没有 html/head/body），塞进 iframe 会带 8px 边距，
+所以补了完整文档外壳；容器高度写死的 `500px` 改成 `100%`（否则塞进 2:3 框里被压扁）；
+`#speech-area`（弹台词那块）的纯色背景换成「昨日死」那张图，
+右下角同样注明「图源：昨日死」，并压一层暗罩让台词读得清。
+**原始文件没动**，生成脚本留在 `_dev/make-companion.ps1`（`_dev/` 不入库）。
+
+### 4 · 左上角站名字号再大一号，副标再小一号
+
+```css
+.masthead__name { font-size: clamp(1.25rem, 2.5vw, 1.8rem); }  /* 原 clamp(1.1rem,2.2vw,1.55rem) */
+.masthead__role { font-size: 0.6875rem; }                       /* 原 0.75rem */
+```
+
+### 本轮实测
+
+- **退场方向**：读 DOM 里的 `--out-x` 对过两次 ——
+  选左边时右边那摞拿到 `150vw`，选右边时左边那摞拿到 `-150vw`
+- **互动摞**：单张牌居中；卡面是「昨日死」铺满整面，右下角金色行书「图源：昨日死」
+- **互动灯箱**：2:3 细框实测 **400×598 CSS px**（正好 2:3），
+  iframe 里点按钮会把待机台词换成回应台词 —— 说明小玩意真的能玩，不是一张图
+- **粒子**：`console` 埋点确认 burst 143 粒、rAF 帧循环正常；
+  再临时改成不透明红，肉眼确认粒子确实从卡牌边缘迸出来，
+  然后按最终参数收回（金色细沙在截图里本来就几乎看不见，这是标定后的预期）
+- 控制台 **0 报错**（诊断日志已全部清掉）
+
+### 还没上线
+
+本轮**仍然只改本地，没有 commit / push**。
+
+
+---
+
+## 二十五 · 五项返修（2026-11-06，已实测，暂未上线）
+
+### 1 · 发牌器只停留在作品区
+
+选中一个牌堆之后，发牌器会钉在视口顶部。滚到「关于我 / 联系方式」时它还挂着，
+像一件忘了收的道具。
+
+这题有**两层**坑，只改一层都不行。
+
+**第一层：CSS 压不过行内样式。**
+发牌器的 opacity 是 `deck.js` 用行内样式写的（`dealer.style.opacity = '1'`），
+而行内样式的优先级高于样式表，所以
+
+```css
+.deck.is-dealer-off .deck__dealer { opacity: 0; }   /* 输了 */
+```
+
+根本盖不住它。加 `!important` 才收得住：
+
+```css
+.deck.is-dealer-off .deck__dealer { opacity: 0 !important; }
+```
+
+**第二层：判定「牌桌还在不在视口里」的逻辑本身就是错的。**
+早先用 `IntersectionObserver` 观察牌桌区块：
+
+```js
+root.classList.toggle('is-dealer-off', !e.isIntersecting);
+```
+
+但 Chromium 把「元素边缘刚好贴着视口边缘」也算作**相交**（edge-adjacent），
+而锚点跳转（`scrollIntoView`）停下的位置正好是「牌桌底边 == 视口顶」——
+判定永远停在「还在页面上」，`is-dealer-off` 压根不会加上。
+
+改成直接量几何，阈值贴着站点的锚点线取：
+
+```js
+/* 锚点线 = .deck / .page 的 scroll-margin-top (4.5rem = 72px) */
+var sm = getComputedStyle(root).scrollMarginTop;
+var anchorOff = parseFloat(sm);
+if (!anchorOff || anchorOff < 20) anchorOff = 72;   /* rem 没解析成 px 时的兜底 */
+var SLACK = 8;
+window.addEventListener('scroll', function () {
+  var r = root.getBoundingClientRect();
+  root.classList.toggle('is-dealer-off', r.bottom <= anchorOff + SLACK);
+}, { passive: true });
+```
+
+实测停住时牌桌底边落在 **72.19px**（比 4.5rem 多出 0.19 的亚像素），
+所以阈值取 72 + 8 = 80px。
+
+**实测**：滚到「关于我」「联系方式」发牌器消失，滚回作品区它又出现。
+
+### 2 · 互动作品不展示详细信息
+
+`deck.js` 的 `renderDetail()`：只要 `w.interactive` 为真，
+lead 和 detail **整块都不显示**（不是只藏起「背景 / 做法 / 反思」，连 lead 也一起藏）：
+
+```js
+var isEmbed = !!(w && w.interactive);
+if (this.lbLead) {
+  if (isEmbed) {
+    this.lbLead.textContent = '';
+    this.lbLead.hidden = true;
+  } else {
+    var lead = (w.detail && w.detail.lead) || w.blurb || '';
+    this.lbLead.textContent = lead;
+    this.lbLead.hidden = !lead;
+  }
+}
+...
+if (isEmbed) {
+  this.lbDetail.hidden = true;
+  return;
+}
+```
+
+同时把「陪伴式工作」的 `detail` 字段从 `works.js` 里**整个删掉** ——
+不是留着不显示，是不留。那段文字转到 Obsidian 的
+`作品集/作品条目/陪伴式工作.md`，网页上不展示。
+
+灯箱右边现在只剩：编号 / 标题 / 类型·年份·分辨率。
+
+### 3 · 陪伴式工作：底图往上 25%，暗罩换成均匀半透明
+
+两处都在 `_dev/make-companion.ps1` 里（副本生成脚本，`_dev/` 不入库）。
+
+| | 之前 | 现在 |
+|---|---|---|
+| 背景位置 | `#speech-area { background-position: center 26%; }` | **`center 51%`** |
+| 暗罩 | 径向渐变（中心亮、四周暗） | **均匀 `rgba(11, 7, 16, 0.55)`** |
+
+`background-position-y` 数值越大 = 图片越往上 = 露出图片越下方，
+所以「往上 25%」是 `26% → 51%`（25 个百分点）。
+
+原来那层径向渐变把人脸糊掉了 —— 中心恰好是最亮的地方，正好打在脸上。
+换成整块均匀半透明之后，脸和台词同时留住。
+
+台词另外加了硬投影：
+
+```css
+text-shadow: 0 1px 2px #000, 0 0 8px rgba(0,0,0,.9), 0 0 20px rgba(0,0,0,.8);
+```
+
+### 4 · 「互动」再添一张牌：找东西
+
+源文件：`C:\Users\dell\Pictures\ai\午夜风铃\“找东西”.html`
+（注意文件名**带中文弯引号**，同目录下还有一个不带引号的 `找东西.html`，
+用户指定的是带引号那份）
+
+| | 值 |
+|---|---|
+| 卡背 | 塔罗牌背（`assets/deck/card-back.webp`，所有牌共用一张） |
+| 卡面 | `wanwan.jpg` → `assets/deck/wanwan.webp`（740×1316，87,890B） |
+| 署名 | 右下角金色行楷「角色来源：熬肉」 |
+| 灯箱 | 2:3 细框，跑 `assets/deck/find-things.html` |
+
+`find-things.html` 是副本（生成脚本 `_dev/make-find-things.ps1`），原文件一个字没动：
+
+- 删掉 Google Fonts 的 `@import`（国内打不开），改本地衬线栈
+  `'Songti SC','STSong','SimSun','Source Han Serif SC',Georgia,serif`
+- `#game-container` 高度 `540px` → `100%` 并补 `box-sizing: border-box`
+  （否则塞进 2:3 框里被压扁）
+- `#screen::before` 铺 `wanwan.webp`（`center 20% / cover`）
+- `#screen::after` 均匀遮罩 `rgba(11, 7, 16, 0.55)`
+- 右下角 `#screen-credit`「角色来源：熬肉」
+
+底图走 `#screen::before` 而不是改 `background`，
+是因为这页有主题覆写（`.theme-melancholic #screen` 用 `!important`），
+`::before` 画在主题背景之上，不会被盖掉。
+
+**牌堆配置**（`config.js`）：互动摞 `count: 2`，
+`include: ['companion-work', 'find-things']`。
+
+**牌少时网格居中**：`deck.js` 新增 `is-pair` —— 2 张牌收成两列居中
+（`max-width: 23.9rem`），`is-single` 保留给 1 张牌；
+≤620px 时 `max-width: 100%`（窄屏本来就是两列）。
+
+```css
+.deck__grid.is-single { grid-template-columns: minmax(0, 1fr); max-width: 11.2rem; margin-inline: auto; }
+.deck__grid.is-pair   { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 23.9rem; margin-inline: auto; }
+```
+
+顺带补了编号：罗马数字表原来只到 `Ⅹ`，第 11 件作品会掉回阿拉伯数字「11」，
+牌背、卡面、灯箱三处一起对不上。`deck.js` 的 `ROMAN` 补上 `'Ⅺ'`。
+
+### 5 · 「图源」→「角色来源」
+
+统一叫「角色来源」：陪伴式工作卡面署名、两个小网页内部的署名、
+`works.js` 里 `interactive.credit` 的默认值，全部改完；代码注释里的「图源」也一并改了。
+
+### 本轮实测
+
+- **发牌器**：滚到「关于我」「联系方式」都消失，滚回作品区又出现
+- **互动摞**：发 2 张牌，居中排列（Ⅹ 陪伴式工作 / Ⅺ 找东西，编号是罗马数字 Ⅺ）
+- **卡面**：「找东西」的 `wanwan` 铺满整面（9:16 无裁切），右下角金色行楷「角色来源：熬肉」
+- **两个灯箱**：都是 2:3 细框（实测 318×478 CSS px），底图 + 均匀遮罩，台词可读，右下角署名正确；
+  caption 只有编号 / 标题 / 类型·年份·分辨率，**没有 lead，也没有背景 / 做法 / 反思**
+- **「陪伴式工作」灯箱**：点按钮，待机台词会切成回应台词（iframe 内脚本正常运行）
+- **「找东西」灯箱**：点「节操」，「求助次数」变成 1，台词换成那段回应 —— 小玩意真的能玩
+- 控制台 **0 报错**（只有 three.js r150+ 的既有弃用警告）
+
+### Obsidian 同步
+
+- 新建 `作品集/作品条目/陪伴式工作.md`（序号 10）
+- 新建 `作品集/作品条目/找东西.md`（序号 11）
+- 两份都保留完整的「背景 / 做法 / 反思」—— 网页上不展示，vault 里留着
+- `作品.md` 的 lead 改成「九支片子，两个能玩的小网页」
+- 画廊 Base 自动收录新条目（`作品集/作品索引.base` 不用改）
+
+### 还没上线
+
+本轮**仍然只改本地，没有 commit / push**。

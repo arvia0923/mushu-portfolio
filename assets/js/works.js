@@ -404,6 +404,51 @@ window.MS_WORKS = {
           }
         ]
       }
+    },
+
+    /* ── 互动：点开是一个真的能玩的小网页 ────────────────
+       这两件都没有视频，也没有「背景 / 做法 / 反思」那套档案 ——
+       互动作品在网页上只展示作品本身，详细的文字留在 Obsidian 里。 */
+    {
+      no: 10,
+      id: 'companion-work',
+      title: '陪伴式工作',
+      titleEn: 'Companion at Work',
+      type: '互动 / 网页小玩意',
+      year: 2026,
+      res: '响应式网页',
+      orientation: '竖版',
+      group: 'arcana',
+      featured: false,
+      video: '',
+      cover: 'assets/deck/yesterday-death.webp',
+      blurb: '一个坐在旁边陪你工作的幻影 —— 你做你的事，它说它的话。',
+      interactive: {
+        html: 'assets/deck/companion-work.html',
+        cover: 'assets/deck/yesterday-death.webp',
+        credit: '角色来源：昨日死'
+      }
+    },
+
+    {
+      no: 11,
+      id: 'find-things',
+      title: '找东西',
+      titleEn: 'Find It',
+      type: '互动 / 网页小玩意',
+      year: 2026,
+      res: '响应式网页',
+      orientation: '竖版',
+      group: 'arcana',
+      featured: false,
+      video: '',
+      cover: 'assets/deck/wanwan.webp',
+      blurb: '你又乱丢东西了？没关系，有人替你找 —— 顺便报个数。',
+      interactive: {
+        html: 'assets/deck/find-things.html',
+        cover: 'assets/deck/wanwan.webp',
+        credit: '角色来源：熬肉'
+      }
     }
   ]
 };

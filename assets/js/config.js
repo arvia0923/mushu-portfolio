@@ -72,8 +72,54 @@ window.MS_CONFIG = {
   deck: {
     /* 灯箱打开时暂停首页视频 */
     pauseHeroWhenOpen: true,
-    /* 悬停时自动静音预览 */
-    hoverPreview: true
+    /* 悬停时在卡面上叠一层静音预览。
+       ⚠️ 默认关掉：卡面就该是「作品封面」，而且实测有些片子首帧是纯黑
+       （work-05 首帧 YAVG=0.002）或纯白，翻面瞬间会闪一下。
+       另外悬停就开始下视频（最大那个 19.5MB），跟「加载流畅」也冲突。
+       想开的话改成 true —— 但得接受首帧闪烁。 */
+    hoverPreview: false,
+
+    /* ── 牌堆（每一摞 = 一个作品类别） ─────────────────────
+       id     : 类别标识
+       name/en: 牌堆中间 / 下方的文字
+       image  : 牌堆图标（透明底）
+       count  : 角标数量
+       empty  : true = 这一摞暂时空着（点开是「还没发牌」）
+       include: 只收哪些作品 id；不填 = 全部作品 */
+    piles: [
+      {
+        id: 'video',
+        name: '观影',
+        en: 'SCREENINGS',
+        image: 'assets/deck/pile-a.webp',
+        count: 9,
+        include: [
+          'brush-evolution', 'fitness', 'landscape-game', 'luxury-bag',
+          'cel-character', 'fashion-portrait', 'daily-life', 'mv', 'practice'
+        ]
+      },
+      {
+        id: 'interactive',
+        name: '互动',
+        en: 'INTERACTIVE',
+        image: 'assets/deck/pile-b.webp',
+        count: 2,
+        include: ['companion-work', 'find-things']
+      }
+    ],
+
+    /* 卡背：所有卡牌共用同一张，浏览器只会请求一次 */
+    backImage: 'assets/deck/card-back.webp',
+
+    /* ── 发牌节奏（毫秒） ─────────────────────────────────
+       stagger  : 每张牌错开多久（模拟 staggerChildren）
+       deal     : 单张牌飞到位要多久
+       flip     : 3D 翻转要多久
+       dealerW  : 发牌器宽度（px），高度按 512:683 自动算 */
+    stagger: 76,
+    deal: 780,
+    flip: 720,
+    dealerW: 200
   },
 
   /* ── 视图切换（首页 ⇄ 站点） ───────────────────────────────
@@ -138,7 +184,7 @@ window.MS_CONFIG = {
     backKicker: '动画 / 影像 / 互动',
     backTitle: '这是一个捕捉梦境的暗室。',
     backNote: '如果你也喜欢奇奇怪怪的浪漫，欢迎联系：',
-    backEmail: 'Email: 1034136944',
+    backEmail: 'Email: 1034136944@qq.com',
     backFoot: 'Scroll to explore the illusions.'
   }
 };

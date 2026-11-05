@@ -224,6 +224,28 @@ if (foilStrength > 0.0) {
     return total;
   }
 
+  /* 一行字有多宽（跟 drawTracked 同一套字距算法） */
+  function trackedWidth(ctx, text, tracking) {
+    var chars = Array.from(String(text));
+    var widths = chars.map(function (c) { return ctx.measureText(c).width; });
+    return widths.reduce(function (a, b) { return a + b; }, 0) + tracking * Math.max(0, chars.length - 1);
+  }
+
+  /* 画一行字：超过 maxW 就按比例收字号和字距
+     —— 文案变长（比如邮箱补了后缀）时，不会撑出牌面 */
+  function drawFitted(ctx, text, cx, y, weight, size, family, tracking, maxW, align) {
+    var t = String(text);
+    ctx.font = (weight ? weight + ' ' : '') + Math.round(size) + 'px ' + family;
+    var w = trackedWidth(ctx, t, tracking);
+    if (maxW && w > maxW) {
+      var k = maxW / w;
+      size = size * k;
+      tracking = tracking * k;
+      ctx.font = (weight ? weight + ' ' : '') + Math.round(size) + 'px ' + family;
+    }
+    return drawTracked(ctx, t, cx, y, tracking, align);
+  }
+
   function traceRoundedRect(path, x, y, width, height, radius) {
     var r = Math.max(0, Math.min(radius, width / 2, height / 2));
     var k = r * 0.4477;
@@ -445,28 +467,23 @@ if (foilStrength > 0.0) {
 
     // 动画 / 影像 / 互动
     ctx.fillStyle = gold + '0.92)';
-    ctx.font = '500 ' + Math.round(W * 0.050) + 'px ' + SERIF;
-    drawTracked(ctx, opts.backKicker || '动画 / 影像 / 互动', cx, H * 0.250, W * 0.010, 'center');
+    drawFitted(ctx, opts.backKicker || '动画 / 影像 / 互动', cx, H * 0.250, '500', W * 0.050, SERIF, W * 0.010, W * 0.80, 'center');
 
     // 这是一个捕捉梦境的暗室。
     ctx.fillStyle = 'rgb(' + CREAM + ')';
-    ctx.font = '500 ' + Math.round(W * 0.055) + 'px ' + SERIF;
-    drawTracked(ctx, opts.backTitle || '这是一个捕捉梦境的暗室。', cx, H * 0.360, W * 0.007, 'center');
+    drawFitted(ctx, opts.backTitle || '这是一个捕捉梦境的暗室。', cx, H * 0.360, '500', W * 0.055, SERIF, W * 0.007, W * 0.82, 'center');
 
     // 如果你也喜欢奇奇怪怪的浪漫，欢迎联系：
     ctx.fillStyle = silver + '0.92)';
-    ctx.font = '400 ' + Math.round(W * 0.040) + 'px ' + SERIF;
-    drawTracked(ctx, opts.backNote || '如果你也喜欢奇奇怪怪的浪漫，欢迎联系：', cx, H * 0.460, W * 0.003, 'center');
+    drawFitted(ctx, opts.backNote || '如果你也喜欢奇奇怪怪的浪漫，欢迎联系：', cx, H * 0.460, '400', W * 0.040, SERIF, W * 0.003, W * 0.82, 'center');
 
-    // Email: 1034136944
+    // Email（补了 @qq.com 后明显变长 → 按 maxW 自动收字号，别撑出牌面）
     ctx.fillStyle = gold + '0.95)';
-    ctx.font = '500 ' + Math.round(W * 0.055) + 'px ' + SANS;
-    drawTracked(ctx, opts.backEmail || 'Email: 1034136944', cx, H * 0.560, W * 0.010, 'center');
+    drawFitted(ctx, opts.backEmail || 'Email: 1034136944@qq.com', cx, H * 0.560, '500', W * 0.055, SANS, W * 0.010, W * 0.76, 'center');
 
     // Scroll to explore the illusions.
     ctx.fillStyle = silver + '0.48)';
-    ctx.font = Math.round(W * 0.029) + 'px ' + SANS;
-    drawTracked(ctx, opts.backFoot || 'Scroll to explore the illusions.', cx, H * 0.720, W * 0.005, 'center');
+    drawFitted(ctx, opts.backFoot || 'Scroll to explore the illusions.', cx, H * 0.720, '', W * 0.029, SANS, W * 0.005, W * 0.80, 'center');
   }
 
   /* ═══════════════════════════════════════════════════════════

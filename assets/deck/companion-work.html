@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>陪伴式工作</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #0b0710; }
+  body { overflow: hidden; }
+  /* 底图上只压一整个均匀的半透明遮罩 —— 原来的径向渐变正好糊在人脸中间 */
+  #speech-area::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: rgba(11, 7, 16, 0.55);
+  }
+  #speech-text {
+    position: relative;
+    z-index: 1;
+    color: #ece4da;
+    text-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.95),
+      0 0 8px rgba(0, 0, 0, 0.85),
+      0 0 20px rgba(0, 0, 0, 0.55) !important;
+  }
+  .act-btn { font-family: 'Georgia', 'Songti SC', serif; }
+</style>
+</head>
+<body>
+<div id="companion-game" style="width:100%;max-width:450px;height:100%;box-sizing:border-box;margin:0 auto;font-family:'Georgia', serif;background:linear-gradient(135deg,#1a1020 0%,#0b0710 100%);border:1px solid #3a2230;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.6);position:relative;">
+  
+  <!-- 顶部信息区 -->
+  <div style="padding:12px 16px;background:rgba(11,7,16,0.7);border-bottom:1px dashed rgba(201,168,106,0.3);display:flex;align-items:center;gap:8px;">
+    <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#3a1220,#1a1020);border:1px solid #c9a86a;display:flex;align-items:center;justify-content:center;">
+      <span style="color:#c9a86a;font-size:14px;">☾</span>
+    </div>
+    <div>
+      <div style="font-size:13px;font-weight:600;color:#e8e0d0;letter-spacing:1px;">Theophilos</div>
+      <div style="font-size:10px;color:#a699b5;">幻影正在陪伴中 ·</div>
+    </div>
+  </div>
+
+  <!-- 对话展示区 -->
+  <div id="speech-area" style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:24px 28px;text-align:center;position:relative;background:#0b0710 url('yesterday-death.webp') center 51%/cover no-repeat;">
+    <p id="speech-text" style="font-size:14px;line-height:1.8;color:#d1c9c3;margin:0;transition:opacity 0.4s ease;text-shadow:0 0 10px rgba(201,168,106,0.1);"></p>
+    <span id="speech-credit" style="position:absolute;right:9px;bottom:6px;z-index:2;font-family:'STXingkai','华文行楷','KaiTi','楷体','STKaiti',cursive;font-size:11px;line-height:1.2;letter-spacing:0.06em;color:#e9cd8f;text-shadow:0 0 9px rgba(201,168,106,0.75),0 1px 3px rgba(0,0,0,0.95);opacity:0.9;pointer-events:none;">角色来源：昨日死</span>
+  </div>
+
+  <!-- 按钮操作区 -->
+  <div id="btn-area" style="padding:12px 16px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+    <button class="act-btn" data-action="phone" style="padding:10px 4px;border:1px solid rgba(201,168,106,0.2);border-radius:8px;background:rgba(26,16,32,0.8);font-size:12px;color:#c9a86a;cursor:pointer;transition:all 0.3s;">📱 看手机</button>
+    <button class="act-btn" data-action="daze" style="padding:10px 4px;border:1px solid rgba(201,168,106,0.2);border-radius:8px;background:rgba(26,16,32,0.8);font-size:12px;color:#c9a86a;cursor:pointer;transition:all 0.3s;">💭 发呆</button>
+    <button class="act-btn" data-action="nap" style="padding:10px 4px;border:1px solid rgba(201,168,106,0.2);border-radius:8px;background:rgba(26,16,32,0.8);font-size:12px;color:#c9a86a;cursor:pointer;transition:all 0.3s;">😴 趴桌</button>
+    <button class="act-btn" data-action="water" style="padding:10px 4px;border:1px solid rgba(201,168,106,0.2);border-radius:8px;background:rgba(26,16,32,0.8);font-size:12px;color:#c9a86a;cursor:pointer;transition:all 0.3s;">🥤 喝水</button>
+    <button class="act-btn" data-action="stretch" style="padding:10px 4px;border:1px solid rgba(201,168,106,0.2);border-radius:8px;background:rgba(26,16,32,0.8);font-size:12px;color:#c9a86a;cursor:pointer;transition:all 0.3s;">🙆 伸懒腰</button>
+    <button class="act-btn" data-action="sigh" style="padding:10px 4px;border:1px solid rgba(201,168,106,0.2);border-radius:8px;background:rgba(26,16,32,0.8);font-size:12px;color:#c9a86a;cursor:pointer;transition:all 0.3s;">😮‍💨 叹气</button>
+    <button class="act-btn" data-action="eyes" style="padding:10px 4px;border:1px solid rgba(201,168,106,0.2);border-radius:8px;background:rgba(26,16,32,0.8);font-size:12px;color:#c9a86a;cursor:pointer;transition:all 0.3s;">👀 揉眼睛</button>
+    <button class="act-btn" data-action="snack" style="padding:10px 4px;border:1px solid rgba(201,168,106,0.2);border-radius:8px;background:rgba(26,16,32,0.8);font-size:12px;color:#c9a86a;cursor:pointer;transition:all 0.3s;">🍪 吃零食</button>
+    <button class="act-btn" data-action="music" style="padding:10px 4px;border:1px solid rgba(201,168,106,0.2);border-radius:8px;background:rgba(26,16,32,0.8);font-size:12px;color:#c9a86a;cursor:pointer;transition:all 0.3s;">🎵 听音乐</button>
+  </div>
+
+  <script>
+    (function(){
+      // 你的数据池保持不变
+      var idle=["专心工作啦，我在这里看着你呢。","诶，你皱眉的样子还挺好看的。","需要茶吗？我泡的龙井可是一绝。","别咬笔头，那个笔又不能吃。","你工作的时候特别安静，我喜欢。","我可以在这里坐一整天，不用在意我。","诶~你刚才叹气了哦，被我听到了。","五百年来我见过很多人工作，你是最认真的那类。","要不要我给你揉揉肩？免费的哦。","你的字写得很好看，有人跟你说过吗？","我在看你，不过你可以假装没注意到。","Limbo的光线不伤眼睛，放心工作吧。","诶，你嘴角刚才翘了一下，在偷笑什么？","我帮你把茶续上了，趁热喝。","工作累了可以靠过来，我肩膀借你。","你专注的样子让我想到一个词：赏心悦目。","别赶我走啊，我很安静的。","诶~这份报告是关于什么的？我好奇。","你的头发垂下来了，要帮你别起来吗？","我数了一下，你已经连续工作四十分钟了。","人类的专注力真的很有趣呢。","饿了吗？我可以去买奶茶，要什么口味？","你敲键盘的节奏很稳，像在弹钢琴。","诶，你刚才揉眼睛了，眼睛干了吧？","我在旁边看书，不打扰你，但你随时可以叫我。","你知道吗，陪你工作比开会有趣多了。","五百年的耐心不是白练的，我等你。","诶~你的耳朵红了，是太热了吗？","要不要听我讲个冷笑话？保证不好笑。","你认真的时候，我就不想逗你了。骗你的。","这杯茶凉了，我去换一杯热的。","你今天的状态不错，继续保持啦。","诶，你咬嘴唇了，遇到难题了？","我可以帮你查资料，虽然我更擅长查卷宗。","你工作的时候不用管我，我自己能找到乐子。","诶~你刚才伸懒腰的动作很可爱。","还有多少要做？我帮你倒计时。","你的桌面比我办公室整洁多了，佩服。","累了就休息，工作明天还在，我也还在。","诶，你看我干嘛？快回去工作啦。","我翻了两页书了你还没抬头，真的很专注呢。","诶~你的睫毛好长，低头的时候特别明显。"];
+      
+      var responses={
+        phone:["诶~说好了工作的，怎么偷看手机啦？","在看什么？给我也看看嘛。","休息一下也好，但别刷太久哦。","是谁发消息了？表情这么丰富。","我就知道你坚持不了太久，人类嘛。","看完了记得放下，我在这里比手机有趣。"],
+        daze:["诶~灵魂出窍了？要我帮你叫回来吗？","发呆的时候在想什么？还是什么都没想？","你发呆的样子很安静，我不打扰你。","回来啦，欢迎回到现实世界。","需要我弹一下你的额头帮你回神吗？","发呆也是一种休息，不用不好意思。"],
+        nap:["累了就趴一会儿，我帮你看着时间。","诶，要不要我帮你披件外套？别着凉。","趴着对颈椎不好哦，要不靠我肩膀？","睡着了的话我会叫你的，放心。","你的呼吸变慢了，是真的困了吧。","乖，休息十分钟，我给你定闹钟。"],
+        water:["多喝水是好习惯，继续保持。","诶，杯子空了？我帮你续上。","喝水的间隙看了我一眼，被我抓到了。","要换成奶茶吗？我请客。","你喝水的样子很从容，我喜欢看。","记得小口喝，别呛到了。"],
+        stretch:["诶~筋骨舒展开了？继续加油。","你伸懒腰的时候腰线很好看，我说实话。","活动活动也好，要不要站起来走两步？","我帮你按按肩膀？坐太久了。","伸完了？精神回来了吗？","你的关节响了，坐太久了吧，下次提醒你。"],
+        sigh:["诶~怎么了？遇到什么难题了吗？","叹气会把好运气叹走的哦。我瞎说的。","要不要跟我说说？我虽然帮不上忙但我会听。","深呼吸，慢慢来，不急的。","你叹气的时候我也跟着紧张了一下。","没关系的，做不完明天再做，天塌不下来。"],
+        eyes:["眼睛累了？要不要闭眼休息一分钟？","诶，别揉太用力，会红的。","我去给你找个热毛巾敷一下？","看远处放松一下，比如看我。","你的眼睛是你最好看的地方之一，要爱护。","屏幕亮度是不是太高了？我帮你调。"],
+        snack:["诶，吃东西了？分我一口嘛。","别弄到键盘上啊，你的报告还没存呢。","吃点东西补充能量也好，继续加油。","你吃东西的时候腮帮子鼓鼓的，很可爱。","我也想吃，但是魅魔不靠这个补充能量啦。","慢点吃，别噎着了。"],
+        music:["诶~在听什么？分享给我听听。","你听音乐的时候会轻轻点头，你知道吗？","品味不错，这首歌我也喜欢。","要不要我给你推荐几首？我五百年的歌单很丰富的。","听着音乐工作效率会更高吧，继续。","诶，你跟着哼了，声音很好听。"]
+      };
+
+      var el = document.getElementById("speech-text");
+      var idleIndex = 0;
+      
+      // 修复核心：使用两个独立的定时器变量
+      var idleInterval = null; 
+      var resumeTimeout = null; 
+
+      function shuffle(arr){
+        for(var i=arr.length-1;i>0;i--){
+          var j=Math.floor(Math.random()*(i+1));
+          var t=arr[i];arr[i]=arr[j];arr[j]=t;
+        }
+        return arr;
+      }
+      shuffle(idle);
+
+      function showIdle(){
+        el.style.opacity = "0";
+        setTimeout(function(){
+          el.textContent = idle[idleIndex % idle.length];
+          el.style.opacity = "1";
+          idleIndex++;
+        }, 300);
+      }
+
+      // 启动匀速轮播
+      function startIdle(){
+        // 确保清理旧的轮播，防止叠加
+        if(idleInterval) clearInterval(idleInterval); 
+        showIdle(); // 立即显示一条
+        idleInterval = setInterval(showIdle, 3000); // 保持3秒匀速
+      }
+
+      // 点击按钮触发的回应
+      function showResponse(action){
+        // 1. 停止当前的自动轮播
+        if(idleInterval) clearInterval(idleInterval); 
+        
+        // 2. 如果之前有准备恢复的定时器，把它清理掉（这是防狂点的关键）
+        if(resumeTimeout) clearTimeout(resumeTimeout);
+
+        // 3. 展示点击的回应
+        var pool = responses[action];
+        var pick = pool[Math.floor(Math.random() * pool.length)];
+        el.style.opacity = "0";
+        
+        setTimeout(function(){
+          el.textContent = pick;
+          el.style.opacity = "1";
+        }, 300);
+
+        // 4. 设定4秒后恢复待机（每次点击都会重置这个4秒）
+        resumeTimeout = setTimeout(startIdle, 4000);
+      }
+
+      var btns = document.querySelectorAll(".act-btn");
+      for(var i=0; i<btns.length; i++){
+        btns[i].addEventListener("click", function(){
+          var a = this.getAttribute("data-action");
+          showResponse(a);
+          
+          // 按钮点击动效
+          this.style.transform = "scale(0.95)";
+          this.style.background = "rgba(58,18,32,0.9)";
+          var self = this;
+          setTimeout(function(){
+            self.style.transform = "scale(1)";
+            self.style.background = "rgba(26,16,32,0.8)";
+          }, 150);
+        });
+      }
+
+      // 初始化
+      startIdle();
+    })();
+  </script>
+</div>
+</body>
+</html>

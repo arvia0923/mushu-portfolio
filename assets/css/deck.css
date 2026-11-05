@@ -1,6 +1,11 @@
 /* ═══════════════════════════════════════════════════════════════
-   作品区 · 塔罗牌阵（骨架）
-   铁律：卡内视频/封面占比 ≥ 80%；移动端砍一半装饰；
+   作品区 · 牌桌
+   ---------------------------------------------------------------
+   阶段 1  牌堆      桌布上的两摞牌，边框发柔和暗金光
+   阶段 2  发牌      选中的牌堆滑到视口最上方当「发牌器」，
+                     其余牌堆向两侧滑出，卡牌依次抽出码成网格
+   阶段 3  翻面      悬停 3D 翻转，边缘迸出金色流沙
+   铁律：卡面永远 ≥ 整卡面积；移动端砍一半装饰；
         灯箱打开时装饰全部退场
    ═══════════════════════════════════════════════════════════════ */
 
@@ -23,108 +28,492 @@
 }
 .deck__lede { color: var(--text-300); max-width: var(--measure); }
 
+/* ── 舞台：牌堆和牌桌共用同一块地方 ───────────────────── */
+.deck__stage {
+  --deck-top: clamp(1rem, 3vw, 2.5rem);
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  min-height: clamp(24rem, 46vh, 34rem);
+}
+
+/* 牌堆（绝对定位 → 不占布局，牌桌长大时页面不会被顶）
+   靠上摆：牌堆占牌桌的上半部分，下半留空给之后摊开的牌阵 */
+.deck__piles {
+  grid-area: 1 / 1;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: clamp(2.5rem, 7vw, 5.5rem);
+  padding-top: var(--deck-top);
+  transition: opacity 0.45s var(--ease-out);
+}
+.deck.is-dealt .deck__piles { opacity: 0; pointer-events: none; }
+
+/* 牌桌（发牌后出现） */
+.deck__board {
+  grid-area: 1 / 1;
+  align-self: start;
+  width: 100%;
+  max-width: 62rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.45s var(--ease-out), visibility 0s linear 0.45s;
+}
+.deck.is-dealt .deck__board {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.45s var(--ease-out), visibility 0s linear 0s;
+}
+
+/* ── 牌堆 ───────────────────────────────────────────────── */
+.pile {
+  position: relative;
+  display: block;
+  width: clamp(9rem, 15vw, 13rem);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: center;
+  transition: transform 0.55s var(--ease-out), opacity 0.4s var(--ease-out);
+}
+/* 未选中的牌堆：向两侧滑出并淡出 */
+.pile.is-out {
+  transform: translateX(var(--out-x, 0)) rotate(7deg);
+  opacity: 0;
+  pointer-events: none;
+}
+/* 选中的牌堆：本体淡出，由「发牌器」接手 */
+.pile.is-gone { opacity: 0; transform: scale(0.96); pointer-events: none; }
+
+.pile__stack {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 512 / 683;
+}
+
+/* 图标本身：透明底，用 drop-shadow 沿着轮廓发暗金光 */
+.pile__img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 18px 26px rgba(0, 0, 0, 0.72))
+    drop-shadow(0 0 9px rgba(201, 168, 106, 0.30))
+    drop-shadow(0 0 24px rgba(201, 168, 106, 0.16));
+  transition: filter 0.45s var(--ease-out), transform 0.45s var(--ease-out);
+}
+.pile:hover .pile__img,
+.pile:focus-visible .pile__img {
+  filter:
+    drop-shadow(0 22px 32px rgba(0, 0, 0, 0.8))
+    drop-shadow(0 0 14px rgba(242, 216, 160, 0.70))
+    drop-shadow(0 0 40px rgba(201, 168, 106, 0.34));
+  transform: translateY(-4px);
+}
+
+/* 背后的一团柔光 */
+.pile__glow {
+  position: absolute;
+  z-index: 0;
+  inset: -16%;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(201, 168, 106, 0.16), transparent 72%);
+  opacity: 0.5;
+  transition: opacity 0.45s var(--ease-out);
+}
+.pile:hover .pile__glow { opacity: 1; }
+
+/* 内里：平时微微压暗，悬停时压得更暗，文字才跳得出来 */
+.pile__scrim {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(115% 68% at 50% 72%, rgba(11, 7, 16, 0.62), transparent 74%),
+    linear-gradient(to bottom, rgba(11, 7, 16, 0.34), rgba(11, 7, 16, 0.10) 42%, rgba(11, 7, 16, 0.52) 76%, rgba(11, 7, 16, 0.86));
+  opacity: 0.3;
+  transition: opacity 0.45s var(--ease-out);
+}
+.pile:hover .pile__scrim,
+.pile:focus-visible .pile__scrim { opacity: 1; }
+
+/* 中间文字 */
+.pile__label {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  bottom: 4%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.18em;
+  pointer-events: none;
+}
+/* 文字下面垫一块暗牌，免得压在花纹上读不清 */
+.pile__label::before {
+  content: "";
+  position: absolute;
+  inset: -0.55em -0.45em -0.7em;
+  z-index: -1;
+  background: linear-gradient(to bottom, rgba(11, 7, 16, 0), rgba(11, 7, 16, 0.58) 28%, rgba(11, 7, 16, 0.7) 70%, rgba(11, 7, 16, 0));
+  pointer-events: none;
+}
+.pile__name {
+  font-family: var(--font-display);
+  font-size: clamp(0.95rem, 1.7vw, 1.22rem);
+  letter-spacing: 0.1em;
+  color: var(--text-100);
+  opacity: 0.7;
+  transition: opacity 0.4s var(--ease-out), color 0.4s var(--ease-out), text-shadow 0.4s var(--ease-out);
+}
+.pile__en {
+  font-family: var(--font-num);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  color: var(--gold);
+  opacity: 0.5;
+  transition: opacity 0.4s var(--ease-out);
+}
+.pile__count {
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  color: var(--text-500);
+  opacity: 0.75;
+}
+.pile:hover .pile__name,
+.pile:focus-visible .pile__name {
+  opacity: 1;
+  color: #F6E9C8;
+  text-shadow: 0 0 18px rgba(233, 203, 140, 0.55);
+}
+.pile:hover .pile__en,
+.pile:focus-visible .pile__en { opacity: 1; }
+
+/* ── 发牌器（选中的牌堆飞到视口最上方） ────────────────── */
+.deck__dealer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 30;
+  aspect-ratio: 512 / 683;
+  transform: translate3d(0, -200vh, 0);
+  transform-origin: 0 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.deck__dealer img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 12px 20px rgba(0, 0, 0, 0.75))
+    drop-shadow(0 0 13px rgba(201, 168, 106, 0.42))
+    drop-shadow(0 0 36px rgba(201, 168, 106, 0.22));
+}
+/* 发牌器钉在视口顶上，牌阵滚上去会从它底下过 —— 垫一层暗底光晕，
+   让被压住的标题沉进背景里，而不是被齐刷刷切掉一半。 */
+.deck__dealer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(76% 48% at 50% 74%,
+      rgba(11, 7, 16, 0.94) 0%,
+      rgba(11, 7, 16, 0.66) 44%,
+      rgba(11, 7, 16, 0) 78%);
+}
+/* 滚出作品区时把发牌器收起来。
+   ⚠️ 发牌器的 opacity 是 deck.js 用行内样式写的（淡入淡出），
+   行内样式优先级高于这条规则 —— 不加 !important 它根本收不起来，
+   于是滚到「关于我 / 联系方式」时它还挂在视口顶上。 */
+.deck.is-dealer-off .deck__dealer { opacity: 0 !important; }
+
+/* ── 牌桌工具条 ─────────────────────────────────────────── */
+.deck__bar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: clamp(1.2rem, 2.6vw, 2rem);
+}
+.deck__back {
+  font-size: var(--step--1);
+  letter-spacing: 0.16em;
+  color: var(--text-500);
+  background: none;
+  border: 1px solid var(--gold-dim);
+  border-radius: 2px;
+  padding: 0.45em 1.15em;
+  cursor: pointer;
+  transition: color var(--dur-fast), border-color var(--dur-fast);
+}
+.deck__back:hover { color: var(--text-100); border-color: var(--gold); }
+
+/* ── 空牌堆 ─────────────────────────────────────────────── */
+.deck__empty {
+  display: none;
+  padding: clamp(2rem, 6vw, 4rem) 1rem clamp(2.5rem, 7vw, 5rem);
+  text-align: center;
+}
+.deck.is-empty .deck__empty { display: block; }
+.deck.is-empty .deck__grid { display: none; }
+.deck__empty-mark {
+  display: block;
+  font-size: 1.8rem;
+  color: var(--gold);
+  opacity: 0.65;
+}
+.deck__empty-title {
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  color: var(--text-100);
+  margin: 0.5em 0 0;
+}
+.deck__empty-note { color: var(--text-500); margin: 0.45em 0 0; }
+
+/* ── 卡牌网格 ───────────────────────────────────────────── */
 .deck__grid {
   display: grid;
-  gap: clamp(1.2rem, 2.6vw, 2.2rem);
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: clamp(0.9rem, 1.8vw, 1.6rem);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  justify-content: center;
+  align-content: start;
+  padding: clamp(0.5rem, 1.5vw, 1.2rem) 0 clamp(1rem, 2vw, 2rem);
 }
-.deck__loading { color: var(--text-500); letter-spacing: 0.2em; }
 
-/* ── 牌 ───────────────────────────────────────────────── */
-.card {
+/* 只有一张牌时（互动那一摞），别贴着网格左边站 —— 居中摆 */
+.deck__grid.is-single {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 11.2rem;
+  margin-inline: auto;
+}
+/* 两张牌同理：收成两列居中，别摊在 5 列网格的头两格 */
+.deck__grid.is-pair {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 23.9rem;
+  margin-inline: auto;
+}
+
+/* ── 一张卡牌 ───────────────────────────────────────────── */
+.tcard {
   position: relative;
-  display: grid;
-  grid-template-rows: auto 1fr auto;   /* 标号 / 画面 / 牌名 */
-  background: linear-gradient(170deg, rgba(36, 22, 49, 0.92), rgba(16, 10, 24, 0.94));
-  border: 1px solid var(--gold-dim);
-  cursor: pointer;
-  text-align: left;
+  aspect-ratio: 9 / 16;
+  perspective: 1100px;
+  margin: 0;
+  border: 0;
   padding: 0;
-  overflow: hidden;
-  transition:
-    transform 0.4s var(--ease-out),
-    border-color 0.4s var(--ease-out),
-    box-shadow 0.4s var(--ease-out);
+  background: none;
+  cursor: pointer;
+  transform: translateZ(0);
+  transition: transform 0.35s var(--ease-out);
 }
-.card:hover,
-.card:focus-visible {
-  transform: translateY(-6px);
-  border-color: var(--gold);
-  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(201, 168, 106, 0.16);
-}
+.tcard:hover,
+.tcard:focus-visible { transform: translateY(-7px); }
 
-.card__no {
-  font-family: var(--font-num);
-  font-size: var(--step--1);
-  letter-spacing: 0.3em;
-  color: var(--gold);
-  padding: 0.85em 1em 0.5em;
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 0.8em;
+.tcard__inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform var(--deck-flip, 720ms) cubic-bezier(0.22, 0.72, 0.2, 1);
 }
-.card__no small {
-  font-family: var(--font-body);
-  font-size: 0.68rem;
-  letter-spacing: 0.14em;
-  color: var(--text-500);
-}
+.tcard.is-flipped .tcard__inner { transform: rotateY(180deg); }
 
-/* 卡内画面：占整卡高度 ≥ 80% */
-.card__frame {
-  position: relative;
+.tcard__side {
+  position: absolute;
+  inset: 0;
   overflow: hidden;
+  border-radius: 9px;
+  border: 1px solid var(--gold-dim);
   background: var(--ink-900);
-  aspect-ratio: 4 / 5.4;
+  backface-visibility: hidden;
+  box-shadow: 0 18px 42px -24px rgba(0, 0, 0, 0.92);
 }
-.card__frame img,
-.card__frame video {
+.tcard__side--back { transform: rotateY(0deg); }
+.tcard__side--front { transform: rotateY(180deg); }
+
+/* 背面：满幅塔罗牌背 + 作品名 / 日期 */
+.tcard__back {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-.card__frame video { opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
-.card:hover .card__frame video,
-.card:focus-visible .card__frame video { opacity: 1; }
-.card__frame::after {
-  content: "";
+.tcard__cap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  padding: 0.7em 0.6em 1.7em;
+  background: linear-gradient(to bottom, rgba(11, 7, 16, 0.88), rgba(11, 7, 16, 0.42) 58%, transparent);
+  text-align: center;
+}
+.tcard__no {
+  font-family: var(--font-num);
+  font-size: 0.74rem;
+  letter-spacing: 0.28em;
+  text-indent: 0.28em;
+  color: var(--gold);
+}
+.tcard__title {
+  font-family: var(--font-display);
+  font-size: clamp(0.8rem, 1.45vw, 1.02rem);
+  line-height: 1.3;
+  letter-spacing: 0.04em;
+  color: var(--text-100);
+  margin: 0.25em 0 0;
+}
+.tcard__meta {
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: var(--text-300);
+  margin: 0.3em 0 0;
+}
+
+/* 正面：顶部信息带 + 完整 3:4 封面 + 底部文字带 */
+.tcard__face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.5rem 0.55rem 0.6rem;
+  background:
+    radial-gradient(130% 62% at 50% 0%, rgba(84, 62, 122, 0.5), transparent 64%),
+    linear-gradient(to bottom, #241b3c 0%, #16111f 58%, #1d1634 100%);
+}
+.tcard__fhead {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-bottom: 0.45em;
+  border-bottom: 1px solid rgba(201, 168, 106, 0.22);
+}
+.tcard__fno {
+  font-family: var(--font-num);
+  font-size: 0.68rem;
+  letter-spacing: 0.26em;
+  color: var(--gold);
+}
+.tcard__ftype {
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: var(--text-300);
+  text-align: right;
+}
+/* 封面：面积正好 3:4，object-fit: cover 也一格不裁 */
+.tcard__fpic {
+  position: relative;
+  flex: 0 1 auto;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 2px;
+  box-shadow:
+    0 0 0 1px rgba(201, 168, 106, 0.26),
+    0 10px 24px -14px rgba(0, 0, 0, 0.92);
+}
+.tcard__cover,
+.tcard__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.tcard__video {
+  opacity: 0;
+  transition: opacity 0.45s var(--ease-out);
+}
+.tcard.is-flipped .tcard__video.is-ready { opacity: 1; }
+.tcard__veil {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(to bottom, rgba(11, 7, 16, 0.22), transparent 30%, transparent 70%, rgba(11, 7, 16, 0.5));
+  background: linear-gradient(to bottom, transparent 62%, rgba(22, 17, 31, 0.55));
 }
-
-.card__foot {
-  padding: 0.9em 1em 1.1em;
-  border-top: 1px solid rgba(201, 168, 106, 0.14);
+.tcard__fbody {
+  flex: 0 0 auto;
+  padding-top: 0.55em;
 }
-.card__title {
+.tcard__fname {
   font-family: var(--font-display);
-  font-size: var(--step-1);
-  letter-spacing: 0.06em;
+  font-size: clamp(0.78rem, 1.35vw, 0.95rem);
+  line-height: 1.25;
   color: var(--text-100);
+  margin: 0;
 }
-.card__meta {
-  font-size: var(--step--1);
-  color: var(--text-500);
-  letter-spacing: 0.1em;
-  margin-top: 0.25em;
-}
-.card__blurb {
-  font-size: var(--step--1);
+.tcard__fmeta {
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
   color: var(--text-300);
-  margin-top: 0.6em;
-  line-height: 1.65;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  margin: 0.3em 0 0;
 }
 
-/* ── 灯箱 ─────────────────────────────────────────────── */
+/* 互动作品：原图铺满整面（不裁 3:4），右下角注明角色来源 */
+.tcard__bleed {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #0b0710;
+}
+.tcard__bleedimg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* 上下各压一点暗，底图上的字才立得住 */
+.tcard__bleed::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(to bottom,
+    rgba(11, 7, 16, 0.46) 0%,
+    rgba(11, 7, 16, 0) 24%,
+    rgba(11, 7, 16, 0) 58%,
+    rgba(11, 7, 16, 0.66) 100%);
+}
+/* 角色来源署名：烫金行楷 */
+.tcard__credit {
+  position: absolute;
+  right: 0.44rem;
+  bottom: 0.4rem;
+  z-index: 2;
+  font-family: var(--font-hand);
+  font-size: 0.68rem;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  color: #f0d79a;
+  text-shadow:
+    0 0 10px rgba(233, 203, 140, 0.65),
+    0 0 26px rgba(201, 168, 106, 0.34),
+    0 1px 3px rgba(0, 0, 0, 0.95);
+}
+
+/* ── 灯箱 ───────────────────────────────────────────────── */
 .lightbox {
   position: fixed;
   inset: 0;
@@ -132,7 +521,7 @@
   display: grid;
   place-items: center;
   padding: clamp(1rem, 4vw, 3rem);
-  background: rgba(6, 4, 10, 0.96);
+  background: rgba(6, 4, 10, 0.985);
   animation: lbFade var(--dur-mid) var(--ease-out);
 }
 .lightbox[hidden] { display: none; }
@@ -154,6 +543,28 @@
   max-height: 82vh;
   background: #000;
   border: 1px solid var(--gold-dim);
+}
+.lightbox__video[hidden] { display: none; }
+
+/* 互动作品：2:3 的细框，里面跑着真的能玩的小网页 */
+.lightbox__embed {
+  height: min(82vh, 33rem, 138vw);
+  aspect-ratio: 2 / 3;
+  width: auto;
+  max-width: 92vw;
+  margin: 0 auto;
+  border: 1px solid var(--gold-dim);
+  border-radius: 3px;
+  background: #0b0710;
+  overflow: hidden;
+  box-shadow: 0 20px 54px -28px rgba(0, 0, 0, 0.95);
+}
+.lightbox__embed[hidden] { display: none; }
+.lightbox__embed iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
 }
 .lightbox__info {
   min-width: 0;
@@ -231,21 +642,58 @@ body.is-lightbox-open .phase,
 body.is-lightbox-open .sound,
 body.is-lightbox-open .scroll-cue { opacity: 0; pointer-events: none; }
 
-@media (max-width: 980px) {
-  .lightbox__stage {
-    grid-template-columns: 1fr;
-    max-height: 92vh;
-    overflow-y: auto;
-  }
-  .lightbox__info { max-height: none; overflow: visible; padding-right: 0; }
-  .lightbox__video { max-height: 54vh; }
+/* 金色流沙画布：全屏固定，鼠标穿过去 */
+.dust {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
 }
 
-@media (max-width: 760px) {
+/* ── 响应式 ─────────────────────────────────────────────── */
+@media (max-width: 1180px) {
+  .deck__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+  .deck__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .deck__piles { gap: clamp(1.5rem, 5vw, 3rem); }
+
+  /* 窄屏：上面视频、下面作品档案（早先是固定右栏，手机上视频被挤成一条缝） */
+  .lightbox {
+    place-items: start center;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .lightbox__stage {
+    grid-template-columns: minmax(0, 1fr);
+    width: min(680px, 94vw);
+    max-height: none;
+  }
+  .lightbox__video { max-height: 56vh; }
+  .lightbox__embed { height: min(70vh, 30rem, 138vw); }
+  .lightbox__info {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+}
+@media (max-width: 620px) {
+  .deck__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .deck__grid.is-single { max-width: 13rem; }
+  .deck__grid.is-pair { max-width: 100%; }
   .deck { padding-top: 5.5rem; }
-  .deck__grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr)); }
-  .card__blurb { display: none; }
-  .card__no { padding: 0.6em 0.75em 0.4em; }
-  .card__foot { padding: 0.7em 0.75em 0.9em; }
-  .card__frame { aspect-ratio: 4 / 5; }
+  /* 窄屏：两摞牌要挤得下 */
+  .pile { width: clamp(6.5rem, 38vw, 9rem); }
+  .pile__name { font-size: 0.92rem; }
+  .deck__piles { gap: clamp(1rem, 4vw, 2rem); }
+}
+
+/* 减少动效：只留状态变化，去掉位移与翻转 */
+@media (prefers-reduced-motion: reduce) {
+  .tcard__inner { transition: opacity 0.01s linear; }
+  .tcard.is-flipped .tcard__inner { transform: none; }
+  .tcard__side--front { opacity: 0; }
+  .tcard.is-flipped .tcard__side--front { opacity: 1; }
+  .tcard.is-flipped .tcard__side--back { opacity: 0; }
+  .pile.is-out { transform: none; }
 }

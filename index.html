@@ -282,7 +282,7 @@
 
       <p class="scroll-cue" data-scroll-cue>
         <span class="scroll-cue__line" aria-hidden="true"></span>
-        <span class="scroll-cue__text">向下滚动</span>
+        <span class="scroll-cue__text">✦ 循此入梦 ✦</span>
       </p>
     </div>
   </section>
@@ -297,17 +297,38 @@
   <!-- 站点的固定背景：占卜桌布（白金紫）浮在视口最底部，滚动时不跟着走 -->
   <div class="siteview__cloth" aria-hidden="true"></div>
 
-  <!-- 作品区 · 塔罗牌阵 The Tarot Deck -->
-  <section class="deck" id="deck" data-hook="tarot-deck">
+  <!-- 作品区 · 牌桌 The Tarot Deck -->
+  <section class="deck" id="deck" data-hook="tarot-deck" data-deck>
     <header class="deck__head">
       <p class="kicker">The Tarot Deck</p>
-      <h2 class="deck__title">九张牌</h2>
+      <h2 class="deck__title">牌桌</h2>
       <p class="deck__lede">
-        九件作品，九张牌。点开任意一张，它会翻到正面，全屏放映，旁边是它的来历。
+        桌布上摆着几摞牌，每一摞是一类作品。挑一摞，它会滑到桌沿上方变成发牌器，一张张抽出作品；
+        把鼠标放在牌上，金砂散开，露出封面。
       </p>
     </header>
-    <div class="deck__grid" data-deck-grid>
-      <p class="deck__loading">正在铺牌…</p>
+
+    <div class="deck__stage">
+      <!-- 阶段 1：桌布上的几摞牌（由 deck.js 按 config.js 的 piles 生成） -->
+      <div class="deck__piles" data-deck-piles></div>
+
+      <!-- 阶段 2：牌桌 -->
+      <div class="deck__board" data-deck-board>
+        <div class="deck__bar">
+          <button class="deck__back" type="button" data-deck-back>← 回到牌桌</button>
+        </div>
+        <div class="deck__grid" data-deck-grid></div>
+        <div class="deck__empty" data-deck-empty>
+          <span class="deck__empty-mark" aria-hidden="true">✦</span>
+          <p class="deck__empty-title">这一摞还没有发牌</p>
+          <p class="deck__empty-note">正在酝酿中，很快就好。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 发牌器：选中的那一摞飞到视口最上方，只露下半截 -->
+    <div class="deck__dealer" data-deck-dealer aria-hidden="true">
+      <img data-dealer-img src="" alt="" decoding="async" />
     </div>
   </section>
 
@@ -448,6 +469,10 @@
   <figure class="lightbox__stage">
     <div class="lightbox__screen">
       <video class="lightbox__video" data-lightbox-video playsinline controls></video>
+      <!-- 互动作品：2:3 的细框，里面跑着真的能玩的小网页 -->
+      <div class="lightbox__embed" data-lightbox-embed hidden>
+        <iframe title="互动作品" loading="lazy" referrerpolicy="no-referrer"></iframe>
+      </div>
     </div>
     <div class="lightbox__info">
       <figcaption class="lightbox__caption">
@@ -461,6 +486,9 @@
   </figure>
 </div>
 
+<!-- 金色流沙：翻牌时从卡牌边缘迸出的粒子（全屏固定层，鼠标穿过去） -->
+<canvas class="dust" data-dust aria-hidden="true"></canvas>
+
 <!-- 数据与脚本 -->
 <script src="assets/vendor/three.min.js"></script>
 <script src="assets/js/config.js"></script>
@@ -468,6 +496,7 @@
 <script src="assets/js/views.js"></script>
 <script src="assets/js/hero.js"></script>
 <script src="assets/js/lanyard.js"></script>
+<script src="assets/js/dust.js"></script>
 <script src="assets/js/deck.js"></script>
 <script src="assets/js/main.js"></script>
 <!-- 开屏：放在最后 —— 要等 config.js / main.js 都就位，才拿得到贴图清单和就绪信号 -->
