@@ -531,12 +531,21 @@ powershell -ExecutionPolicy Bypass -File .\_dev\covers\make-covers.ps1
 站点是**纯静态**的（HTML + CSS + JS + 视频/图片，没有后端、没有构建步骤），
 所以**换任何静态托管都行，包括自己的域名**。
 
-### 现在就能做的
+### ✅ 已经上线了（2026-11-05）
 
-直接用本会话的发布能力，可以拿到一个**公网可访问的 URL**（任何拿到链接的人都能看）。
-要发布时跟我说一声，我会先把站点内容确认一遍再发。
+| | |
+|---|---|
+| **线上地址** | **https://stardust-mushu.fyi** |
+| 备用地址 | https://mushu-portfolio.pages.dev |
+| 托管 | Cloudflare Pages（free 套餐，境外节点，**不需要 ICP 备案**） |
+| 源码仓库 | https://github.com/arvia0923/mushu-portfolio（公开仓库，Pages 直连 Git） |
+| 部署方式 | 路线 A：push 到 `main` → Cloudflare 自动构建 → 自动上线（不用手动点 Deploy） |
+| HTTPS | Cloudflare 自动签发，已实测通过 |
+| 绑定域名 | `stardust-mushu.fyi`（DNS 记录 CNAME `@` → `mushu-portfolio.pages.dev`，已开代理） |
 
-### 想绑 `stardust-mushu.com` 这类自己的域名
+完整的部署细节、踩过的坑、**以后怎么更新**，都记在 **§二十 · 上线记录**。
+
+### 想再绑一个域名（比如 `www.stardust-mushu.fyi`）
 
 推荐 **Cloudflare Pages**（域名已经在 Cloudflare 买好的话，这是最省事的一条路，
 免费额度足够，HTTPS 证书自动签发）。
@@ -1123,7 +1132,7 @@ FandolSong / 文鼎PL细上海宋 / 王汉宗中明体**……
 |---|---|---|---|
 | 1 | 工作牌**背面的字太小**，要占到整个工作牌约 70%，一行一句话 | `lanyard.js` 的 `paintBackText()` 整体放大：字号 ×1.3～1.5，字块从牌底（0.66H~0.89H）上移到 **0.16H~0.72H**，横向占牌面 **~75%**；压暗同时加强（`backDim` 0.52 → **0.62**，渐变上移到 12%H） | 新增 `_dev/lanyard-back-test.html` 翻面截图确认：文字块占牌面宽 **~75%**、清晰可读、方向没镜像 ✅ |
 | 2 | 三个页面都要有背景图，**固定在最底部、不跟着滚**，换成「白金紫」桌布 | 新增 `.siteview__cloth`（`base.css`）：`position:fixed; bottom:0; height:100vh`，用新图 `assets/deck/tablecloth-v3.jpg`；`.deck` 原来的平铺背景改成透明 | 自测台实测：桌布层 `position=fixed`、滚动 500px 后 top **0 → 0 没跟着滚** ✅；作品 / 关于我 / 联系三页都透出桌布 ✅ |
-| 3 | 部署上线方式（Cloudflare + 自有域名） | README 第十节重写成 **Cloudflare Pages 两条路线**（Git 直连 / Direct Upload）+ 域名解析怎么填 + 上线前检查清单 | 见第十节（本轮**未发布**，等你确认） |
+| 3 | 部署上线方式（Cloudflare + 自有域名） | README 第十节重写成 **Cloudflare Pages 两条路线**（Git 直连 / Direct Upload）+ 域名解析怎么填 + 上线前检查清单 | 见第十节 + **§二十**（**已上线**：`https://stardust-mushu.fyi`） |
 
 ### 1 · 卡背文字放大
 
@@ -1213,3 +1222,111 @@ FandolSong / 文鼎PL细上海宋 / 王汉宗中明体**……
 - 桌布层：1280×800 @ 0,0，`position=fixed`，`opacity=0.30`；再滚 500px → top **0 → 0** ✅
 - 作品 / 关于我 / 联系方式三页截图：桌布都透出来了，文字对比度可读 ✅
 - 首页视图：桌布不出现 ✅
+
+---
+
+## 二十、上线记录（2026-11-05，路线 A 已上线）
+
+### 现在访问哪里
+
+| | |
+|---|---|
+| **正式地址** | **https://stardust-mushu.fyi** |
+| 备用地址 | https://mushu-portfolio.pages.dev |
+| Pages 项目 | `mushu-portfolio`（Account ID `a6ef81351c56f08c2b89c030e617f0e2`） |
+| 仓库 | https://github.com/arvia0923/mushu-portfolio（`main` = 生产分支） |
+| DNS | `stardust-mushi.fyi` → CNAME `@` → `mushu-portfolio.pages.dev`，**已开橙云代理** |
+| HTTPS | Cloudflare 自动签发，curl 实测 200 + 证书校验通过 |
+
+### 仓库长什么样
+
+**Git 仓库就建在站点目录里** —— `风铃作品集/.git`，所以 **vault 就是唯一事实源**，
+不存在「vault 一份、部署目录一份」的两头改问题。
+
+```
+风铃作品集/          ← git 仓库根，部署上传的就是这一层的内容
+├─ index.html
+├─ 404.html          ← 新增：走丢的页面
+├─ _headers          ← 新增：缓存 + 安全响应头
+├─ _redirects        ← 新增：把开发文档挡在站点外
+├─ .gitignore        ← 新增：_dev/ 不入库
+├─ assets/  videos/
+└─ _dev/             ← 自测台 + deploy.ps1，被 .gitignore 排除，不上传
+```
+
+| 关键配置 | 值 | 为什么 |
+|---|---|---|
+| Framework preset | **无（none）** | 纯静态站，没有构建步骤 |
+| Build command | **留空** | 不要填 `npm run build` |
+| Build output directory | **`/`** | 仓库根就是站点根 |
+| 生产分支 | `main` | push 即自动部署 |
+| `core.autocrlf` | `false` | 仓库字节 = 磁盘字节，绝不因 checkout 改写 vault 里手写的文件行尾 |
+| 部署密钥 | 仓库级 **deploy key**（`Read/write`） | 授权范围只有 `mushu-portfolio` 一个仓库，不碰账号 |
+
+### 以后怎么更新（一条命令）
+
+在 Obsidian 里改完站点，**跑一条命令**，30~60 秒后域名自动更新：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "D:\obsidian\film-261103\网页制作？\风铃作品集\_dev\deploy.ps1"
+```
+
+- 脚本做三件事：`git add -A` → `git commit`（提交信息可用 `$env:DEPLOY_MSG` 自定义）→ `git push origin main`
+- **没有改动就直接退出**，不会产生空提交
+- 走的是部署密钥（`D:\TEMP\moodshot\deploy\mushu_deploy`）+ 独立的 `known_hosts`，
+  不需要 GitHub 账号密码，也不会弹浏览器授权
+- `_dev/deploy.ps1` 本身被 `.gitignore` 排除，**不入仓库、不上线**
+
+具体落点：
+
+| 想改什么 | 改哪里 |
+|---|---|
+| 加一件新作品 | 视频放 `assets/videos/works/`，封面放 `assets/deck/`，然后改 `assets/js/works.js` 里的作品清单 |
+| 改版式 / 配色 | `assets/css/*.css`（`tokens.css` 是变量，`base.css` 是通用样式） |
+| 改文案 | `index.html` 里的正文；作品自己的说明在 `assets/js/works.js` |
+| 改首页三段视频 | `videos/hero/` 换文件，名字不变（注意同名替换要处理缓存，见下） |
+
+> ⚠️ **视频同名替换会有 30 天缓存**：`_headers` 给 `/videos/*` 设的是 `max-age=2592000`。
+> 要换掉同名视频，**把文件名改掉**（`02-rotating.mp4` → `02-rotating-v2.mp4`），
+> 然后同步改 `index.html` 里的 `src` 和 `assets/js/hero.js`。
+
+### 缓存策略（`_headers` + 一处控制台设置）
+
+| 资源 | 缓存 | 理由 |
+|---|---|---|
+| `/videos/*` | `public, max-age=2592000`（30 天） | 视频占了 111MB 里的绝大部分，值得长缓存 |
+| `/assets/*` | `public, max-age=0, must-revalidate` | CSS/JS 要做到「改完刷新就能看到」 |
+| `/*` | `nosniff` + `referrer-policy` + `X-Frame-Options: SAMEORIGIN` | 安全响应头 |
+
+> ⚠️ **`_headers` 里写 `max-age=0` 不够** —— Cloudflare 域名级的
+> **浏览器缓存 TTL** 默认是 **4 小时**，它会把比它小的 `max-age` 顶上去
+> （实测 CSS 原本拿到的是 `max-age=14400`）。
+> 已在 **域名 → 缓存 → 配置 → 浏览器缓存 TTL = 遵循现有标头** 改掉，
+> 改完 `_headers` 的值才真正生效。
+
+### 踩过的三个坑
+
+1. **`_redirects` 不支持 404 状态码**
+   官方文档写明：只支持 `200 / 301 / 302 / 303 / 307 / 308`，
+   写成 `/README.md /404 404` 会被**静默忽略**（不报错，就是不生效）。
+   → 改成 `/README.md /404 301`，再放一个 `404.html`，
+   这样访问 `/README.md` 会被 301 到 `/404`，最终拿到**真正的 404 状态码**和 404 页面。
+
+2. **Pages 会把未知路径回退成 index.html**
+   站点只有一个 `index.html`，Pages 判定为 SPA，
+   任何不存在的路径都会返回首页（200）。放上 `404.html` 之后才会走 404 流程。
+
+3. **构建输出目录 = `/` 时，构建要上传 111MB**
+   每次 push 都要把全部素材重新传一遍，**构建比想象中慢**（首次约 40 秒，
+   含 111MB 的一次性上传可能到几分钟）。等一下就好，不用重复 push。
+
+### 已实测通过
+
+- `https://stardust-mushu.fyi/` → **200**，TLS 校验通过，标题「牧舒的捕梦阁楼」✅
+- `https://mushu-portfolio.pages.dev/` → **200** ✅
+- 首页 / 作品 / 关于我 / 联系方式四屏渲染正常，**控制台 0 报错** ✅
+- 首屏 3 支视频正常加载（`/videos/hero/01-idle.mp4` → 200，4.4MB）✅
+- `_headers` 生效：`/videos/*` → `max-age=2592000`；`/assets/css/base.css` → `max-age=0, must-revalidate` ✅
+- 安全头生效：`x-content-type-options`、`referrer-policy`、`x-frame-options` ✅
+- `www.stardust-mushu.fyi` **本轮没绑**（域名页可以随时加，想加说一声）
+
