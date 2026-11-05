@@ -1,0 +1,79 @@
+/* ═══════════════════════════════════════════════════════════════
+   午夜暗室 · 设计令牌
+   来源：whimsigoth-portfolio.md §一 视觉系统
+   改颜色 / 字体 / 节奏，只需要动这一个文件
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 基底 ───────────────────────────────────────────── */
+  --ink-900: #0B0710;   /* 午夜紫黑 · 全站底色 */
+  --ink-850: #120C19;   /* 过渡用深紫 */
+  --ink-800: #1A1020;   /* 天鹅绒紫 · 卡片 / 分区底 */
+  --ink-700: #241631;   /* 天鹅绒紫（提亮） */
+  --ink-moss: #1F2A22;  /* 苔绿 · 首页渐变副色 */
+  --ink-wine: #3A1220;  /* 酒红 · 占卜桌布 */
+
+  /* ── 文字 ───────────────────────────────────────────── */
+  --text-100: #E8E0D0; /* 月光米白 · 主文字 */
+  --text-300: #B9B3C9; /* 银灰 · 次文字 / 描边 */
+  --text-500: #7E7891; /* 更暗的银灰 · 辅助 */
+
+  /* ── 装饰 ───────────────────────────────────────────── */
+  --gold: #C9A86A;      /* 暗金 · 线稿 / 边框 */
+  --gold-dim: rgba(201, 168, 106, 0.28);
+  --amethyst: #8C7AC0;  /* 低饱和紫水晶 · 唯一点缀（禁荧光紫） */
+  --amethyst-dim: rgba(140, 122, 192, 0.22);
+
+  /* ── 字体 ───────────────────────────────────────────── */
+  --font-display: "Optima", "Iowan Old Style", "Palatino Linotype",
+                  "Source Han Serif SC", "Noto Serif SC", "Songti SC",
+                  "STSong", Georgia, serif;
+  --font-body: "Inter", -apple-system, "Segoe UI", "PingFang SC",
+               "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
+  --font-num: "Cormorant Garamond", "Times New Roman", "Songti SC", serif;
+
+  /* ── 导航专用字体（复古宋体） ─────────────────────────────
+     优先「霞鹜文楷」（装了就自动生效），本机没有就退到
+     华文中宋 → 宋体这一类明朝体，避开现代网页的无衬线感。
+     换机器也不怕：Windows 有宋体，macOS 有 Songti SC，
+     Linux 有 Noto Serif SC / Source Han Serif。 */
+  --font-nav: "LXGW WenKai", "霞鹜文楷", "LXGW WenKai Screen",
+              "STZhongsong", "华文中宋", "FandolSong", "Source Han Serif SC",
+              "Noto Serif SC", "STSong", "华文宋体", "Songti SC",
+              "SimSun", "宋体", serif;
+
+  /* ── 节奏 ───────────────────────────────────────────── */
+  --step--1: 0.8125rem;
+  --step-0: 0.9375rem;
+  --step-1: 1.0625rem;
+  --step-2: 1.375rem;
+  --step-3: 2rem;
+  --step-4: 3rem;
+
+  --gutter: clamp(1.25rem, 4vw, 3.5rem);
+  --measure: 62ch;
+
+  /* ── 动效 ───────────────────────────────────────────── */
+  --ease-out: cubic-bezier(0.16, 0.84, 0.44, 1);
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-slow: 0.4s;   /* 烛光提亮 */
+  --dur-mid: 0.25s;
+  --dur-fast: 0.15s;
+
+  /* ── 层级 ───────────────────────────────────────────── */
+  --z-media: 0;
+  --z-ui: 10;
+  --z-deck: 20;
+  --z-hero: 25;        /* 首页固定层（压住站点层） */
+  --z-masthead: 40;    /* 顶栏（压住所有视图） */
+  --z-lightbox: 60;
+}
+
+/* 减少动效偏好：把所有过渡压到接近 0 */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-slow: 0.01s;
+    --dur-mid: 0.01s;
+    --dur-fast: 0.01s;
+  }
+}

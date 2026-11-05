@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>牧舒的捕梦阁楼</title>
+<meta name="description" content="牧舒的捕梦阁楼 —— AIGC / 影像 / 视觉实验。九件作品，一只夜里的风铃。" />
+<meta name="theme-color" content="#0B0710" />
+<meta name="color-scheme" content="dark" />
+
+<link rel="preload" as="video" href="videos/hero/01-idle.mp4" type="video/mp4" />
+<link rel="preload" as="video" href="videos/hero/02-rotating.mp4" type="video/mp4" />
+<link rel="preload" as="video" href="videos/hero/03-final.mp4" type="video/mp4" />
+<link rel="preload" as="image" href="assets/deck/tablecloth-v3.jpg" />
+
+<link rel="stylesheet" href="assets/css/tokens.css" />
+<link rel="stylesheet" href="assets/css/base.css" />
+<link rel="stylesheet" href="assets/css/lanyard.css" />
+<link rel="stylesheet" href="assets/css/hero.css" />
+<link rel="stylesheet" href="assets/css/deck.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#deck">跳到作品</a>
+
+<!-- ══════════════════════════════════════════════════════════
+     顶栏 · 固定在所有视图之上（首页 / 作品 / 关于 / 联系 都看得见）
+     ══════════════════════════════════════════════════════════ -->
+<header class="masthead">
+  <a class="masthead__brand" href="#hero">
+    <span class="masthead__glyph" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="currentColor" fill-opacity="0.16" />
+        <path d="M18.6 4.2l.62 1.58 1.58.62-1.58.62-.62 1.58-.62-1.58-1.58-.62 1.58-.62.62-1.58z" fill="currentColor" stroke="none" />
+      </svg>
+    </span>
+    <span class="masthead__name">牧舒</span>
+    <span class="masthead__role">AIGC · 影像 · 视觉实验</span>
+  </a>
+  <nav class="masthead__nav" aria-label="主导航">
+    <a href="#hero" aria-current="page">
+      <svg class="masthead__orn" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 2.4c.95 4.7 5 8.75 9.7 9.7-4.7.95-8.75 5-9.7 9.7-.95-4.7-5-8.75-9.7-9.7 4.7-.95 8.75-5 9.7-9.7z" fill="currentColor" />
+      </svg>
+      <span class="masthead__label">首页</span>
+    </a>
+    <a href="#deck">
+      <svg class="masthead__orn" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M20.6 14.3A9 9 0 0 1 9.7 3.4a9 9 0 1 0 10.9 10.9z" fill="currentColor" />
+      </svg>
+      <span class="masthead__label">作品</span>
+    </a>
+    <a href="#about">
+      <svg class="masthead__orn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" aria-hidden="true">
+        <path d="M12 21.2V9.4" />
+        <path d="M12 12.6c0-2.3-1.7-3.8-3.8-4.1" />
+        <path d="M12 16.2c0-2.3 1.7-3.8 3.8-4.1" />
+        <circle cx="8.2" cy="8.5" r="1.7" />
+        <circle cx="15.8" cy="12.1" r="1.7" />
+      </svg>
+      <span class="masthead__label">关于我</span>
+    </a>
+    <a href="#contact">
+      <svg class="masthead__orn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3.4 20.6 12 12 20.6 3.4 12z" />
+        <path d="M12 8.6 15.4 12 12 15.4 8.6 12z" />
+      </svg>
+      <span class="masthead__label">联系方式</span>
+    </a>
+  </nav>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════
+     视图一 · 首页（固定铺满视口）
+     三段视频：idle（自动循环）→ rotating（滚轮驱动）→ final（定格）
+     定格后交叉淡化进「视图二」，不再下滑。
+     ══════════════════════════════════════════════════════════ -->
+<div class="hero-track" data-view-hero data-hero-track>
+  <section class="hero" id="hero" aria-label="午夜捕梦网">
+
+    <!-- ── 视频层：三段素材常驻 DOM，永不卸载，靠透明度交叉淡化 ── -->
+    <div class="hero__media" data-hero-media>
+      <video class="hero__layer" data-layer="idle" data-idle="a"
+             src="videos/hero/01-idle.mp4"
+             muted playsinline preload="auto" disablepictureinpicture></video>
+      <video class="hero__layer" data-layer="idle" data-idle="b"
+             src="videos/hero/01-idle.mp4"
+             muted playsinline preload="auto" disablepictureinpicture></video>
+      <video class="hero__layer" data-layer="rotating"
+             src="videos/hero/02-rotating.mp4"
+             muted playsinline preload="auto" disablepictureinpicture></video>
+      <video class="hero__layer" data-layer="final"
+             src="videos/hero/03-final.mp4"
+             muted playsinline preload="auto" disablepictureinpicture></video>
+      <div class="hero__vignette" aria-hidden="true"></div>
+    </div>
+
+    <!-- ── 界面层 ── -->
+    <div class="hero__ui">
+
+      <!-- 左栏文案（对齐参考图） -->
+      <div class="hero__lede">
+        <p class="kicker">The Illusion Cabinet</p>
+        <h1 class="hero__title">幻象陈列室</h1>
+        <p class="hero__rule" aria-hidden="true"></p>
+        <p class="hero__sub">
+          动画分镜学徒，现沉迷 AIGC 的视觉炼金术士。<br />
+          在思想的阁楼，创造属于自己的浪漫，收集那些转瞬即逝的幻觉，并把它陈列于此。
+        </p>
+      </div>
+
+      <!-- 右侧工作牌：React Bits Lanyard（3D 物理摆动）挂点 -->
+      <aside class="lanyard" data-hook="lanyard" aria-label="工作牌">
+        <div class="lanyard__stage" data-lanyard-stage></div>
+        <div class="lanyard__fallback" data-lanyard-fallback>
+          <span class="lanyard__cord" aria-hidden="true"></span>
+          <div class="lanyard__card">
+            <span class="lanyard__corner lanyard__corner--tl" aria-hidden="true"></span>
+            <span class="lanyard__corner lanyard__corner--tr" aria-hidden="true"></span>
+            <span class="lanyard__corner lanyard__corner--bl" aria-hidden="true"></span>
+            <span class="lanyard__corner lanyard__corner--br" aria-hidden="true"></span>
+            <img class="lanyard__photo" src="assets/lanyard/portrait.jpg" alt="牧舒 · 工作牌" />
+            <span class="lanyard__badge" aria-hidden="true">☾</span>
+            <span class="lanyard__name">牧舒</span>
+            <span class="lanyard__role">AIGC / 影像 / 视觉实验</span>
+            <span class="lanyard__no" aria-hidden="true">No. 01</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 声音开关（默认静音，点击后才发声） -->
+      <button class="sound" id="soundToggle" type="button" aria-pressed="false" data-sound>
+        <span class="sound__dot" aria-hidden="true"></span>
+        <span class="sound__label">开启声音</span>
+      </button>
+
+      <!-- 月相进度条：代替普通滚动进度条 -->
+      <div class="phase" data-phase-wrap aria-hidden="true">
+        <span class="phase__moon" data-phase-moon></span>
+        <span class="phase__track"><span class="phase__fill" data-phase-fill></span></span>
+        <span class="phase__caption" data-phase-caption>待机</span>
+      </div>
+
+      <p class="scroll-cue" data-scroll-cue>
+        <span class="scroll-cue__line" aria-hidden="true"></span>
+        <span class="scroll-cue__text">向下滚动</span>
+      </p>
+    </div>
+  </section>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     视图二 · 站点（作品 / 关于 / 联系）
+     首页交叉淡化退出后，这里接管滚动；滚轮上滑回不到首页。
+     ══════════════════════════════════════════════════════════ -->
+<div class="siteview" data-view-site id="siteview">
+
+  <!-- 站点的固定背景：占卜桌布（白金紫）浮在视口最底部，滚动时不跟着走 -->
+  <div class="siteview__cloth" aria-hidden="true"></div>
+
+  <!-- 作品区 · 塔罗牌阵 The Tarot Deck -->
+  <section class="deck" id="deck" data-hook="tarot-deck">
+    <header class="deck__head">
+      <p class="kicker">The Tarot Deck</p>
+      <h2 class="deck__title">九张牌</h2>
+      <p class="deck__lede">
+        九件作品，九张牌。点开任意一张，它会翻到正面，全屏放映，旁边是它的来历。
+      </p>
+    </header>
+    <div class="deck__grid" data-deck-grid>
+      <p class="deck__loading">正在铺牌…</p>
+    </div>
+  </section>
+
+  <!-- 关于 / 联系 -->
+  <section class="page" id="about">
+    <header class="page__head">
+      <p class="kicker">03 / About</p>
+      <h2 class="page__title">关于我</h2>
+      <p class="page__lede">
+        我是刘昶红，可以叫我牧舒。动画专业出身，教过一年幼儿园，现在把大部分时间花在 AI 上——尝试使用 AI，表现自己的情绪。
+      </p>
+    </header>
+
+    <div class="doc">
+      <section class="doc__sec">
+        <h3 class="doc__h">我在做什么</h3>
+        <div class="work">
+          <p class="work__title">AI 动画 / 影像</p>
+          <p>这个作品集里的九件作品，全部由 AI 生成——写脚本、生成画面、配音、剪辑，都是兴趣之作。写代码、做设计、剪片子，都是自己动手。</p>
+        </div>
+        <div class="work">
+          <p class="work__title">幼教 / 讲故事的</p>
+          <p>2025 年 9 月到 2026 年 6 月，在潮州市兰英第一幼儿园见习带班。《笔的三千年演化》就来自那段时间——给小朋友讲《毛笔发展史》时讲着讲着跑偏的那个脑洞。</p>
+        </div>
+      </section>
+
+      <section class="doc__sec">
+        <h3 class="doc__h">一些信条</h3>
+        <blockquote class="quote">没有情绪的画面，就像没有灵魂的躯壳。</blockquote>
+        <blockquote class="quote">迷恋繁复的细节，现在学着怎么「留白」。</blockquote>
+        <blockquote class="quote">像熬魔药一样去孵化想法，像切吐司一样利落地交付。</blockquote>
+      </section>
+
+      <section class="doc__sec">
+        <h3 class="doc__h">经历</h3>
+        <ul class="tl">
+          <li>
+            <span class="tl__when">2025.09 — 2026.06</span>
+            <span class="tl__what">潮州市兰英第一幼儿园 · 见习教师</span>
+            <p>带班、备课、做教具；也是《笔的三千年演化》那个脑洞的来源。</p>
+          </li>
+          <li>
+            <span class="tl__when">2024.06 — 至今</span>
+            <span class="tl__what">自由创作 · AI 动画 / 影像 / 网页</span>
+            <p>用 AI 做动画、影像和网页，这个作品集里的九件作品都是这么来的。</p>
+          </li>
+          <li>
+            <span class="tl__when">2022.10 — 2022.11</span>
+            <span class="tl__what">树华美术 · 助教</span>
+            <p>带少儿绘画课，第一次意识到「讲清楚」比「画漂亮」难。</p>
+          </li>
+          <li>
+            <span class="tl__when">2020.09 — 2024.06</span>
+            <span class="tl__what">广东技术师范大学 · 戏剧与影视学类（动画）本科</span>
+            <p>主修剧本与分镜，专业排名前 2%，连续三年奖学金。</p>
+          </li>
+        </ul>
+      </section>
+
+      <section class="doc__sec">
+        <h3 class="doc__h">做过的东西</h3>
+        <div class="work">
+          <p class="work__title">广东传统文化动漫文创项目</p>
+          <p>3D 建模 + IP 形象 + 营销方案，从传统纹样一路做到可落地的角色 IP。</p>
+        </div>
+        <div class="work">
+          <p class="work__title">基于深度学习的医疗辅助诊断系统 · UI/UX</p>
+          <p>与中山大学眼科医院合作，负责界面与交互设计。获互联网+ 院赛一等奖、校赛金奖、省赛铜奖。</p>
+        </div>
+      </section>
+
+      <section class="doc__sec">
+        <h3 class="doc__h">工具箱</h3>
+        <div class="kit">
+          <p><b>日常</b> Ps / Ae / Ai / Pr · AI 工具全链路 · 脚本 → 素材 → 剪辑</p>
+          <p><b>偶尔</b> Blender · Zbrush · Figma / HTML / CSS</p>
+          <p><b>不想承认</b> 灵感来得比我快 · 字体排版 · 咖啡</p>
+        </div>
+      </section>
+
+      <section class="doc__sec">
+        <h3 class="doc__h">证书</h3>
+        <p class="doc__p">大学英语四级 · 普通话二级甲等 · 高中美术教师资格证 · C2 驾照 · 志愿服务 104 小时 · 去过 20+ 城市</p>
+      </section>
+    </div>
+  </section>
+
+  <section class="page page--contact" id="contact">
+    <header class="page__head">
+      <p class="kicker">04 / Contact</p>
+      <h2 class="page__title">联系方式</h2>
+      <p class="page__lede">有想法、有预算、或者只是想聊聊，都欢迎来信。</p>
+    </header>
+
+    <div class="page__cols">
+      <div class="page__col">
+        <h3>直接联系</h3>
+        <p class="contact-line"><b>邮箱</b> <a href="mailto:1034136944@qq.com">1034136944@qq.com</a></p>
+        <p class="contact-note">一般 48 小时内回复。</p>
+        <p class="contact-line"><b>电话 / 微信</b> 181 **** 4430</p>
+        <p class="contact-note">号码打码了——需要的话先邮件或抖音私信我，收到就回。</p>
+        <p class="contact-line"><b>所在地</b> 广东 · 潮州 · 可远程，也可当面聊。</p>
+      </div>
+      <div class="page__col">
+        <h3>平台上</h3>
+        <div class="qr-row">
+          <div class="qr" data-qr tabindex="0" role="button" aria-label="抖音二维码，悬停或点击显示">
+            <span class="qr__mark">抖音</span>
+            <span class="qr__hint">悬停显示二维码</span>
+            <img class="qr__img" src="assets/contact/douyin-qr.jpg" alt="牧舒的抖音二维码" width="844" height="844" />
+          </div>
+          <p class="qr-row__text">抖音号 <b>62401711439</b><br />私信和邮件都会回。</p>
+        </div>
+        <h3>可以接的</h3>
+        <p>AI 动画 / 影像 · 品牌视觉（标识 / 包装 / 周边）· 网页设计与实现 · 画册与杂志排版 · 交互实验</p>
+      </div>
+      <div class="page__col">
+        <h3>占卜前想知道的</h3>
+        <p>你的故事是讲给谁听的？有没有喜欢的参考（或绝对不想看到的雷区）？以及，你的时间和预算范围。</p>
+        <h3>常见问题</h3>
+        <p>「太小众 / 没人懂怎么办？」——没关系，我做过幼师，最擅长听懂奇奇怪怪的想法。</p>
+        <p>「为什么你的作品风格跨度这么大？」——因为我的灵感像个杂货铺。从传统国风到 Y2K 赛博，我都想试试看。不过别担心，它们最后都会被我收进同一个月亮口袋里。</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p class="foot__sign">牧舒的捕梦阁楼</p>
+    <p class="foot__note">本作品集内的九件作品全部由 AI 生成 / 辅助生成。</p>
+  </footer>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     灯箱：点开卡牌后全屏放映 + 作品档案，装饰全部退场
+     ══════════════════════════════════════════════════════════ -->
+<div class="lightbox" data-lightbox hidden>
+  <button class="lightbox__close" type="button" data-lightbox-close aria-label="关闭">✕</button>
+  <figure class="lightbox__stage">
+    <div class="lightbox__screen">
+      <video class="lightbox__video" data-lightbox-video playsinline controls></video>
+    </div>
+    <div class="lightbox__info">
+      <figcaption class="lightbox__caption">
+        <span class="lightbox__no" data-lightbox-no></span>
+        <span class="lightbox__name" data-lightbox-name></span>
+        <span class="lightbox__meta" data-lightbox-meta></span>
+      </figcaption>
+      <p class="lightbox__lead" data-lightbox-lead></p>
+      <div class="lightbox__detail" data-lightbox-detail></div>
+    </div>
+  </figure>
+</div>
+
+<!-- 数据与脚本 -->
+<script src="assets/vendor/three.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/works.js"></script>
+<script src="assets/js/views.js"></script>
+<script src="assets/js/hero.js"></script>
+<script src="assets/js/lanyard.js"></script>
+<script src="assets/js/deck.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>

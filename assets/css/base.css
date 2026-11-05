@@ -1,0 +1,402 @@
+/* ═══════════════════════════════════════════════════════════════
+   基础层：重置 · 版式 · 通用组件
+   ═══════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  scroll-behavior: auto;           /* 滚动由脚本接管，别让浏览器再插一脚 */
+  background: var(--ink-900);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  line-height: 1.72;
+  color: var(--text-100);
+  background:
+    radial-gradient(120% 80% at 18% 8%,  rgba(31, 42, 34, 0.55) 0%, transparent 58%),
+    radial-gradient(90% 70% at 82% 92%,  rgba(58, 18, 32, 0.42) 0%, transparent 62%),
+    linear-gradient(168deg, var(--ink-900) 0%, #0d0a15 46%, var(--ink-moss) 100%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* 隐藏默认滚动条，但保留滚动能力 */
+html { scrollbar-width: none; -ms-overflow-style: none; }
+html::-webkit-scrollbar { width: 0; height: 0; }
+
+/* ── 视图切换：首页视图锁住页面滚动 ──────────────────────
+   首页是固定的全屏视频层，滚轮不滚页面，而是喂给视频进度；
+   进入站点视图后解锁，页面恢复正常滚动。 */
+html.is-view-hero { overflow: hidden; }
+
+/* ── 视图二：站点层（作品 / 关于 / 联系） ──────────────── */
+.siteview {
+  position: relative;
+  z-index: var(--z-deck);
+  opacity: 0;
+  visibility: visible;
+  pointer-events: none;
+  transition:
+    opacity var(--view-fade, 900ms) var(--ease-soft),
+    visibility 0s linear var(--view-fade, 900ms);
+}
+.siteview.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transition:
+    opacity var(--view-fade, 900ms) var(--ease-soft),
+    visibility 0s linear 0s;
+}
+
+/* ── 站点层背景：占卜桌布（固定在视口底部，滚动时不跟着走） ──
+   作品 / 关于我 / 联系方式 三页共用这一张桌布。
+
+   为什么 position:fixed 仍然是「相对视口」：
+   .siteview 只做了 opacity 淡入（没有 transform / filter / perspective），
+   所以不会生成包含块，fixed 子元素照旧钉在视口上。
+
+   为什么 z-index 0 就够：
+   .deck / .page / .foot 都是 position:relative + z-index:20（--z-deck），
+   天然盖在这张 z-index:0 的桌布上面。 */
+.siteview__cloth {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  background: url("../deck/tablecloth-v3.jpg") center bottom / 100% auto no-repeat;
+  opacity: 0.30;
+}
+/* 遮罩：上缘淡出融进页面底色，中段留出桌布，下缘压暗保住页脚可读性 */
+.siteview__cloth::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom,
+    rgba(11, 7, 16, 0.96) 0%,
+    rgba(11, 7, 16, 0.52) 22%,
+    rgba(11, 7, 16, 0.62) 62%,
+    rgba(11, 7, 16, 0.92) 100%);
+}
+/* 窄屏：桌布铺满高度（居中裁切），不然只剩窄窄一条 */
+@media (max-width: 760px) {
+  .siteview__cloth {
+    background-size: auto 100%;
+    opacity: 0.26;
+  }
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+
+p { margin: 0 0 1em; }
+p:last-child { margin-bottom: 0; }
+
+a { color: var(--text-100); text-decoration: none; }
+img, video { display: block; max-width: 100%; }
+button { font: inherit; color: inherit; }
+
+::selection { background: var(--amethyst); color: var(--ink-900); }
+
+:focus-visible {
+  outline: 1px solid var(--gold);
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  top: -100px; left: 1rem;
+  z-index: 100;
+  padding: 0.6rem 1rem;
+  background: var(--ink-800);
+  border: 1px solid var(--gold-dim);
+  color: var(--text-100);
+  transition: top var(--dur-mid) var(--ease-out);
+}
+.skip-link:focus { top: 1rem; }
+
+/* ── 小字标签 ─────────────────────────────────────────── */
+.kicker {
+  margin: 0 0 0.9em;
+  font-family: var(--font-num);
+  font-size: var(--step--1);
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--gold);
+  opacity: 0.85;
+}
+
+/* ── 通用页面段落（关于 / 联系） ───────────────────────── */
+.page {
+  position: relative;
+  z-index: var(--z-deck);
+  padding: clamp(4rem, 10vw, 8rem) var(--gutter);
+  border-top: 1px solid var(--gold-dim);
+  scroll-margin-top: 4.5rem;
+}
+
+.page__head { max-width: 46rem; margin-bottom: clamp(2rem, 5vw, 3.5rem); }
+.page__title { font-size: var(--step-3); margin-bottom: 0.5em; }
+.page__lede {
+  font-size: var(--step-1);
+  color: var(--text-300);
+  max-width: var(--measure);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   单栏文档流（关于 / 联系方式）
+   结构沿用 vault 里 Obsidian 原版的「单栏 + 分隔线 + 卡片」，
+   配色仍然是午夜暗室这一套（暗金 / 天鹅绒紫 / 月光米白）。
+   ═══════════════════════════════════════════════════════════════ */
+.doc { max-width: 52rem; }
+
+.doc__sec + .doc__sec {
+  margin-top: clamp(2.4rem, 6vw, 3.4rem);
+  padding-top: clamp(2.4rem, 6vw, 3.4rem);
+  border-top: 1px solid var(--gold-dim);
+}
+.doc__h {
+  font-size: var(--step-2);
+  color: var(--text-100);
+  letter-spacing: 0.05em;
+  margin-bottom: 1.1em;
+}
+.doc__p { color: var(--text-300); max-width: var(--measure); }
+
+/* 信息卡：左边一道暗金，底色微微提亮 */
+.work {
+  margin: 0 0 1rem;
+  padding: 1.05rem 1.35rem 1.1rem;
+  background: linear-gradient(135deg, rgba(36, 22, 49, 0.7), rgba(26, 16, 32, 0.24));
+  border: 1px solid rgba(201, 168, 106, 0.15);
+  border-left: 2px solid var(--gold);
+  border-radius: 4px 14px 14px 4px;
+  transition:
+    border-color var(--dur-mid) var(--ease-out),
+    transform var(--dur-mid) var(--ease-out);
+}
+.work:hover {
+  border-color: rgba(201, 168, 106, 0.32);
+  transform: translateY(-2px);
+}
+.work__title {
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  color: var(--text-100);
+  margin-bottom: 0.45em;
+}
+.work p { color: var(--text-300); max-width: var(--measure); }
+
+/* 引语：左侧一道紫水晶竖线 + 渐隐底 */
+.quote {
+  margin: 0 0 0.9rem;
+  padding: 0.2rem 0 0.2rem 1.15rem;
+  border-left: 2px solid var(--amethyst);
+  background: linear-gradient(90deg, rgba(140, 122, 192, 0.1), transparent 72%);
+  border-radius: 0 12px 12px 0;
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  line-height: 1.8;
+  color: var(--text-100);
+}
+
+/* 时间线 */
+.tl { list-style: none; margin: 0; padding: 0; }
+.tl li {
+  position: relative;
+  padding: 0 0 1.3rem 1.55rem;
+  border-left: 1px solid var(--gold-dim);
+}
+.tl li:last-child { border-left-color: transparent; padding-bottom: 0; }
+.tl li::before {
+  content: "";
+  position: absolute;
+  left: -4.5px;
+  top: 0.6em;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 10px rgba(201, 168, 106, 0.55);
+}
+.tl__when {
+  display: block;
+  font-family: var(--font-num);
+  font-size: var(--step--1);
+  letter-spacing: 0.14em;
+  color: var(--gold);
+}
+.tl__what {
+  display: block;
+  margin-top: 0.15em;
+  font-size: var(--step-1);
+  color: var(--text-100);
+}
+.tl p { margin: 0.35em 0 0; color: var(--text-300); max-width: var(--measure); }
+
+/* 工具箱 */
+.kit { display: grid; gap: 0.5rem; }
+.kit p { margin: 0; color: var(--text-300); font-size: var(--step--1); }
+.kit b {
+  display: inline-block;
+  min-width: 4.6em;
+  margin-right: 0.7em;
+  color: var(--amethyst);
+  font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   联系方式：紧凑三栏（旧版布局）
+   自适应两/三栏 + 暗金小标题，密度高，一屏就能看完。
+   ═══════════════════════════════════════════════════════════════ */
+.page__cols {
+  display: grid;
+  gap: clamp(1.75rem, 4vw, 3.5rem);
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  max-width: 76rem;
+}
+.page__col h3 {
+  font-size: var(--step-1);
+  color: var(--gold);
+  margin-bottom: 0.7em;
+  padding-bottom: 0.45em;
+  border-bottom: 1px solid var(--gold-dim);
+}
+.page__col h3 + h3 { margin-top: 1.8em; }
+.page__col p { color: var(--text-300); max-width: var(--measure); }
+
+.contact-note {
+  margin: -0.4em 0 1.1em;
+  color: var(--text-500);
+  font-size: var(--step--1);
+}
+.contact-line { margin-bottom: 0.9em; }
+.contact-line b {
+  display: inline-block;
+  min-width: 6.2em;
+  color: var(--gold);
+  font-weight: 500;
+}
+.contact-line a { border-bottom: 1px solid var(--gold-dim); transition: border-color var(--dur-fast); }
+.contact-line a:hover { border-bottom-color: var(--gold); }
+
+/* 抖音二维码贴着抖音号排，省地方 */
+.qr-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0 0 1.2em;
+}
+.qr-row__text {
+  margin: 0;
+  color: var(--text-300);
+  font-size: var(--step--1);
+  line-height: 1.8;
+}
+.qr-row__text b { color: var(--gold); font-weight: 500; }
+.page--contact .qr { width: clamp(6.5rem, 13vw, 8rem); margin: 0; }
+
+/* ── 抖音二维码（悬停显示） ────────────────────────────── */
+.qr {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: clamp(8.5rem, 16vw, 11rem);
+  aspect-ratio: 1;
+  margin: 0 0 1.1rem;
+  border: 1px solid var(--gold-dim);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(201, 168, 106, 0.12), transparent 68%),
+    var(--ink-800);
+  color: var(--text-300);
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    border-color var(--dur-mid) var(--ease-out),
+    box-shadow var(--dur-mid) var(--ease-out),
+    transform var(--dur-mid) var(--ease-out);
+}
+.qr:hover, .qr:focus-visible, .qr.is-open {
+  border-color: var(--gold);
+  transform: scale(1.03);
+  box-shadow:
+    0 18px 44px -22px rgba(0, 0, 0, 0.9),
+    0 0 26px -12px rgba(201, 168, 106, 0.55);
+}
+.qr__mark {
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  color: var(--gold);
+  transition: opacity var(--dur-mid) var(--ease-out);
+}
+.qr__hint {
+  position: absolute;
+  bottom: 0.7rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  color: var(--text-500);
+  transition: opacity var(--dur-mid) var(--ease-out);
+}
+.qr__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 15px;
+  opacity: 0;
+  transform: scale(0.92);
+  box-shadow: 0 0 0 1px rgba(201, 168, 106, 0.4), 0 10px 30px -12px rgba(0, 0, 0, 0.9);
+  transition:
+    opacity var(--dur-mid) var(--ease-out),
+    transform var(--dur-mid) var(--ease-out);
+}
+.qr:hover .qr__img, .qr:focus-visible .qr__img, .qr.is-open .qr__img {
+  opacity: 1;
+  transform: scale(1);
+}
+.qr:hover .qr__mark, .qr:focus-visible .qr__mark, .qr.is-open .qr__mark,
+.qr:hover .qr__hint, .qr:focus-visible .qr__hint, .qr.is-open .qr__hint {
+  opacity: 0;
+}
+/* 触屏没有 hover，直接常显 */
+@media (hover: none) {
+  .qr__img { opacity: 1; transform: none; }
+  .qr__mark, .qr__hint { opacity: 0; }
+}
+
+/* ── 页脚 ─────────────────────────────────────────────── */
+.foot {
+  position: relative;
+  z-index: var(--z-deck);
+  padding: 3rem var(--gutter) 4rem;
+  border-top: 1px solid var(--gold-dim);
+  color: var(--text-500);
+  font-size: var(--step--1);
+}
+.foot__sign {
+  font-family: var(--font-display);
+  letter-spacing: 0.2em;
+  color: var(--text-300);
+}
+
+@media (max-width: 640px) {
+  .doc { max-width: none; }
+  .page__cols { grid-template-columns: 1fr; }
+  .qr { width: clamp(7.5rem, 40vw, 9.5rem); }
+  .page--contact .qr { width: clamp(7rem, 34vw, 9rem); }
+}

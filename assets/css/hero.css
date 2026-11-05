@@ -1,0 +1,518 @@
+/* ═══════════════════════════════════════════════════════════════
+   首页 · 午夜捕梦网
+   视频铺满视口（object-fit: cover），UI 只占角落，不压画面中心
+   首页是「视图一」：固定铺满视口的全屏层，退场时交叉淡化。
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── 视图一：固定全屏层 ─────────────────────────────────── */
+.hero-track {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-hero);
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--view-fade, 900ms) var(--ease-soft),
+    visibility 0s linear 0s;
+}
+/* 退出：淡出的同时，visibility 延后到淡化结束再关掉 */
+.hero-track.is-leaving {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity var(--view-fade, 900ms) var(--ease-soft),
+    visibility 0s linear var(--view-fade, 900ms);
+}
+
+.hero {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--ink-900);
+}
+
+/* ── 视频层 ───────────────────────────────────────────── */
+.hero__media {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-media);
+}
+
+.hero__layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;          /* 铺满视口，不拉伸 */
+  object-position: center;
+  opacity: 0;
+  will-change: opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  pointer-events: none;
+}
+
+/* 极轻的角落压暗，仅为让角落文字读得清；透明度远低于任何遮罩 */
+.hero__vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 0% 40%, rgba(11, 7, 16, 0.55) 0%, transparent 46%),
+    linear-gradient(to bottom, rgba(11, 7, 16, 0.32) 0%, transparent 22%);
+  opacity: 0.9;
+}
+.hero--bare .hero__vignette { display: none; }
+
+/* ── 界面层 ───────────────────────────────────────────── */
+.hero__ui {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-ui);
+  pointer-events: none;
+  font-family: var(--font-display);
+}
+.hero__ui > * { pointer-events: auto; }
+
+/* 顶部：站名 + 导航（固定在所有视图之上） */
+.masthead {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: var(--z-masthead);   /* 压在工作牌画布之上，导航始终可点 */
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: clamp(1.1rem, 3vw, 2.1rem) var(--gutter);
+  pointer-events: none;
+}
+.masthead > * { pointer-events: auto; }
+
+/* 悬浮压底：站点内容从导航下面滚过时，导航文字依然清楚 */
+.masthead::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 7rem;
+  background: linear-gradient(to bottom,
+    rgba(11, 7, 16, 0.74) 0%,
+    rgba(11, 7, 16, 0.46) 38%,
+    rgba(11, 7, 16, 0) 100%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* 顶部细线：一道暗金细线，两端淡出 */
+.masthead::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(to right,
+    transparent 0%,
+    rgba(201, 168, 106, 0.18) 8%,
+    rgba(201, 168, 106, 0.42) 30%,
+    rgba(201, 168, 106, 0.42) 70%,
+    rgba(201, 168, 106, 0.18) 92%,
+    transparent 100%);
+  pointer-events: none;
+}
+
+.masthead__brand {
+  display: grid;
+  gap: 0.15em;
+  color: var(--text-100);
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.85);
+}
+/* 月相 Logo */
+.masthead__glyph {
+  display: block;
+  line-height: 0;
+  color: var(--gold);
+  margin-bottom: 0.15em;
+  filter: drop-shadow(0 0 6px rgba(201, 168, 106, 0.35));
+}
+.masthead__glyph svg { display: block; }
+.masthead__name {
+  font-size: clamp(1.1rem, 2.2vw, 1.55rem);
+  letter-spacing: 0.16em;
+  line-height: 1.1;
+}
+.masthead__role {
+  font-family: var(--font-body);
+  font-size: var(--step--1);
+  letter-spacing: 0.2em;
+  color: var(--text-300);
+}
+
+/* ── 导航 ───────────────────────────────────────────────
+   复古宋体（霞鹜文楷 → 华文中宋 → 宋体）+ 文字旁的小符号
+   + 项与项之间极弱的发光圆点。 */
+.masthead__nav {
+  --nav-gap: clamp(1.4rem, 3.2vw, 2.7rem);
+  display: flex;
+  align-items: center;
+  gap: var(--nav-gap);
+  font-family: var(--font-nav);
+  font-size: var(--step-0);
+  letter-spacing: 0.18em;
+  padding-top: 0.5em;
+}
+.masthead__nav a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42em;
+  color: var(--text-300);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.8);
+  transition: color var(--dur-slow) var(--ease-out);
+}
+/* 文字旁的小符号：四芒星 / 月相 / 藤蔓 / 菱形 */
+.masthead__orn {
+  width: 0.82em;
+  height: 0.82em;
+  flex: none;
+  color: var(--gold);
+  opacity: 0.6;
+  filter: drop-shadow(0 0 4px rgba(201, 168, 106, 0.35));
+  transition: opacity var(--dur-slow) var(--ease-out),
+              transform var(--dur-slow) var(--ease-out);
+}
+.masthead__nav a:hover .masthead__orn,
+.masthead__nav a[aria-current="page"] .masthead__orn {
+  opacity: 1;
+  transform: scale(1.14);
+}
+/* 项与项之间：极弱的发光小圆点 */
+.masthead__nav a + a::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--nav-gap) / -2);
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  margin-top: -1.5px;
+  border-radius: 50%;
+  background: var(--gold);
+  opacity: 0.32;
+  box-shadow: 0 0 6px 1px rgba(201, 168, 106, 0.5);
+}
+/* 下划线只压在文字下面，不压装饰 */
+.masthead__label {
+  position: relative;
+  display: inline-block;
+}
+.masthead__label::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -0.45em;
+  height: 1px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+.masthead__nav a:hover,
+.masthead__nav a[aria-current="page"] { color: var(--text-100); }
+.masthead__nav a:hover .masthead__label::after,
+.masthead__nav a[aria-current="page"] .masthead__label::after { transform: scaleX(1); }
+
+/* 左栏文案（对齐参考图：站名 → 英文小标 → 大标题 → 简介） */
+.hero__lede {
+  position: absolute;
+  left: var(--gutter);
+  top: 50%;
+  transform: translateY(-50%);
+  max-width: min(26rem, 40vw);
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.9);
+}
+.hero__lede .kicker {
+  font-family: var(--font-num);
+  font-size: var(--step--1);
+  letter-spacing: 0.28em;
+  color: var(--gold);
+  text-transform: none;
+  margin-bottom: 0.8em;
+}
+.hero__title {
+  font-size: clamp(2.1rem, 5.2vw, 3.6rem);
+  letter-spacing: 0.1em;
+  line-height: 1.12;
+  margin-bottom: 0.55em;
+}
+.hero__rule {
+  width: 4.5rem;
+  height: 1px;
+  margin: 0 0 1.1em;
+  background: linear-gradient(to right, var(--gold), transparent);
+}
+.hero__sub {
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  color: var(--text-300);
+  line-height: 1.85;
+  margin-bottom: 1.6em;
+}
+
+/* 右侧工作牌 —— React Bits Lanyard（3D 物理摆动）
+   画布就是 WebGL 的渲染视口：超出相机视锥的牌面**根本不会渲染**，
+   所以「能拖多远」由「画布宽」和「牌面占画布的比例」共同决定。
+   这里把画布放宽到 46vw（旧版 23.75vw）、牌面占宽压到 36%（lanyard.js 的 widthFill），
+   实测横向活动范围 451 px，旧版只有 103 px —— **4.37 倍**（_dev/lanyard-harness.html 可复现）；
+   牌面在屏幕上的**实际尺寸和垂直位置保持不变**（靠 config 的 size 0.437 抵消）。 */
+.lanyard {
+  --lan-w: clamp(20rem, 46vw, 46rem);
+  --lan-r: clamp(1rem, 3vw, 3rem);
+  position: absolute;
+  top: 0;
+  right: var(--lan-r);
+  width: var(--lan-w);
+  height: 88vh;
+  z-index: 1;
+}
+.lanyard__stage {
+  position: absolute;
+  inset: 0;
+}
+/* 3D 挂上后，静态降级版让位 */
+.lanyard.is-3d .lanyard__fallback { display: none; }
+
+/* 静态降级版：没有 WebGL、或用 file:// 打开时显示 */
+.lanyard__fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.lanyard__cord {
+  width: 1px;
+  height: clamp(4rem, 16vh, 10rem);
+  background: linear-gradient(to bottom, rgba(201, 168, 106, 0.05), var(--gold-dim));
+}
+.lanyard__card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1.6 / 2.25;
+  display: grid;
+  align-content: end;
+  justify-items: center;
+  gap: 0.3em;
+  padding: 1.2em 0.8em 1.1em;
+  text-align: center;
+  overflow: hidden;
+  background: linear-gradient(158deg, #241631 0%, var(--ink-800) 52%, #2a1730 100%);
+  border: 1px solid var(--gold-dim);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+}
+.lanyard__photo {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 68%;
+  object-fit: cover;
+  object-position: 50% 36%;
+}
+.lanyard__card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(26, 16, 32, 0) 42%, rgba(26, 16, 32, 0.86) 70%, rgba(26, 16, 32, 1) 100%);
+}
+.lanyard__corner {
+  position: absolute;
+  z-index: 2;
+  width: 11px; height: 11px;
+  border: 1px solid var(--gold-dim);
+}
+.lanyard__corner--tl { top: 6px; left: 6px; border-right: 0; border-bottom: 0; }
+.lanyard__corner--tr { top: 6px; right: 6px; border-left: 0; border-bottom: 0; }
+.lanyard__corner--bl { bottom: 6px; left: 6px; border-right: 0; border-top: 0; }
+.lanyard__corner--br { bottom: 6px; right: 6px; border-left: 0; border-top: 0; }
+.lanyard__badge {
+  position: relative;
+  z-index: 1;
+  font-size: 1.25rem;
+  color: var(--gold);
+  opacity: 0.9;
+}
+.lanyard__name {
+  position: relative;
+  z-index: 1;
+  font-size: clamp(1.15rem, 1.9vw, 1.5rem);
+  letter-spacing: 0.2em;
+  color: var(--text-100);
+}
+.lanyard__role {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  color: var(--text-300);
+  line-height: 1.6;
+}
+.lanyard__no {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-num);
+  font-size: 0.66rem;
+  letter-spacing: 0.22em;
+  color: var(--gold);
+  opacity: 0.7;
+  margin-top: 0.5em;
+}
+
+/* 声音开关 */
+.sound {
+  position: absolute;
+  right: var(--gutter);
+  bottom: clamp(1.1rem, 3vw, 2.1rem);
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+  padding: 0.4em 0.9em;
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-300);
+  font-family: var(--font-body);
+  font-size: var(--step--1);
+  letter-spacing: 0.16em;
+  cursor: pointer;
+  transition: color var(--dur-slow) var(--ease-out), border-color var(--dur-slow) var(--ease-out);
+}
+.sound:hover { color: var(--text-100); border-color: var(--gold-dim); }
+.sound__dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--text-500);
+  box-shadow: 0 0 0 0 rgba(201, 168, 106, 0.4);
+  transition: background var(--dur-slow) var(--ease-out);
+}
+.sound[aria-pressed="true"] { color: var(--text-100); }
+.sound[aria-pressed="true"] .sound__dot {
+  background: var(--gold);
+  animation: soundPulse 2.6s var(--ease-soft) infinite;
+}
+@keyframes soundPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(201, 168, 106, 0.45); }
+  70%  { box-shadow: 0 0 0 7px rgba(201, 168, 106, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(201, 168, 106, 0); }
+}
+
+/* 月相进度条 */
+.phase {
+  position: absolute;
+  right: calc(var(--gutter) * 0.42);
+  top: 50%;
+  z-index: 3;
+  transform: translateY(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 0.7rem;
+}
+.phase__moon {
+  width: 15px; height: 15px;
+  border-radius: 50%;
+  background: var(--text-500);
+  box-shadow: 0 0 12px rgba(232, 224, 208, 0.22);
+  transition: background 0.6s var(--ease-out), box-shadow 0.6s var(--ease-out);
+}
+/* 月相随三段视频切换：新月 → 上弦 → 满月 */
+.phase__moon[data-state="idle"] {
+  background: var(--ink-900);
+  box-shadow: inset -4px 0 0 -1px var(--text-300), 0 0 12px rgba(232, 224, 208, 0.2);
+}
+.phase__moon[data-state="rotating"] {
+  background: linear-gradient(to right, var(--text-100) 50%, transparent 50%);
+  box-shadow: 0 0 14px rgba(232, 224, 208, 0.3);
+}
+.phase__moon[data-state="final"] {
+  background: var(--text-100);
+  box-shadow: 0 0 18px rgba(232, 224, 208, 0.45);
+}
+.phase__track {
+  position: relative;
+  width: 1px;
+  height: clamp(7rem, 22vh, 13rem);
+  background: rgba(185, 179, 201, 0.16);
+}
+.phase__fill {
+  position: absolute;
+  top: 0; left: -1px;
+  width: 3px;
+  height: 0;
+  background: linear-gradient(to bottom, var(--gold), var(--amethyst));
+  transition: height 0.12s linear;
+}
+.phase__caption {
+  font-family: var(--font-body);
+  font-size: 0.66rem;
+  letter-spacing: 0.2em;
+  color: var(--text-500);
+  writing-mode: vertical-rl;
+}
+
+/* 滚动提示 */
+.scroll-cue {
+  position: absolute;
+  left: var(--gutter);
+  bottom: clamp(1.1rem, 3vw, 2.1rem);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  font-family: var(--font-body);
+  font-size: var(--step--1);
+  letter-spacing: 0.22em;
+  color: var(--text-300);
+  transition: opacity var(--dur-mid) var(--ease-out);
+}
+.scroll-cue__line {
+  width: 3.2rem;
+  height: 1px;
+  background: linear-gradient(to right, var(--gold), transparent);
+  animation: cueSlide 2.8s var(--ease-soft) infinite;
+}
+@keyframes cueSlide {
+  0%, 100% { transform: translateX(0); opacity: 0.35; }
+  50%      { transform: translateX(0.5rem); opacity: 1; }
+}
+.scroll-cue.is-gone { opacity: 0; pointer-events: none; }
+
+/* ── 移动端：砍掉一半装饰 ─────────────────────────────── */
+@media (max-width: 760px) {
+  .hero__lede { max-width: min(20rem, 70vw); }
+  .hero__sub { display: none; }
+  .hero__rule { width: 3rem; }
+  .lanyard { right: 0.2rem; width: min(22.5rem, 92vw); height: 96vh; }
+  .lanyard__cord { height: 3rem; }
+  .lanyard__role, .lanyard__no, .lanyard__badge { display: none; }
+  .lanyard__card { padding: 0.8em 0.6em; }
+  .lanyard__name { font-size: 1.05rem; }
+  .phase { display: none; }
+  .masthead__role { display: none; }
+  .masthead__nav {
+    --nav-gap: 1rem;
+    font-size: var(--step--1);
+    letter-spacing: 0.12em;
+  }
+  .masthead__orn { width: 0.72em; height: 0.72em; }
+  .hero__vignette {
+    background: linear-gradient(to bottom, rgba(11, 7, 16, 0.42) 0%, transparent 30%);
+  }
+}
+
+/* 窄屏再砍一层：符号藏掉，只留发光小圆点 */
+@media (max-width: 560px) {
+  .masthead__nav { --nav-gap: 0.8rem; letter-spacing: 0.08em; }
+  .masthead__orn { display: none; }
+}
+
+@media (max-height: 560px) {
+  .hero__lede .kicker, .scroll-cue { display: none; }
+  .lanyard { display: none; }
+}
