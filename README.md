@@ -1265,7 +1265,8 @@ FandolSong / 文鼎PL细上海宋 / 王汉宗中明体**……
 
 ### 以后怎么更新（一条命令）
 
-在 Obsidian 里改完站点，**跑一条命令**，30~60 秒后域名自动更新：
+在 Obsidian 里改完站点，**跑一条命令**，**约 30 秒**后域名自动更新
+（实测：克隆 7 秒 + 构建 6 秒 + 部署 14 秒）：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File "D:\obsidian\film-261103\网页制作？\风铃作品集\_dev\deploy.ps1"
@@ -1290,6 +1291,25 @@ powershell -ExecutionPolicy Bypass -File "D:\obsidian\film-261103\网页制作�
 > 要换掉同名视频，**把文件名改掉**（`02-rotating.mp4` → `02-rotating-v2.mp4`），
 > 然后同步改 `index.html` 里的 `src` 和 `assets/js/hero.js`。
 
+### 万一构建卡在「克隆仓库」不动
+
+Cloudflare Pages 的**构建并发是 1** —— 同一时间只跑一个构建，前一个不结束，
+后面全部卡在 **queued** 状态。所以只要有一个构建卡死，整条流水线就堵死了。
+
+2026-11-05 就遇到过一次：某个构建的 `clone repo` 阶段挂了 **30 分钟**，
+日志永远停在 `Cloning repository...` 一行。后面的构建全在排队，看起来像"仓库太大"，
+其实只是被堵住了。**处理办法**：
+
+1. 打开 Cloudflare 控制台 → Workers 和 Pages → `mushu-portfolio` → **部署**
+2. 找到那个卡住的部署（`clone repo` 转圈最久那个）→ 点**「取消部署」** → 确认「取消构建」
+3. 排队中的下一个构建会立刻接手，**通常 7 秒就克隆完**（实测）
+
+> 排查小技巧：不用点进控制台，浏览器直接开这个地址就能看全部部署的阶段和耗时（JSON）：
+> `https://dash.cloudflare.com/<Account ID>/pages/projects/mushu-portfolio/deployments`
+> 顺便也能看项目配置：
+> `https://dash.cloudflare.com/<Account ID>/pages/projects/mushu-portfolio`
+> （这两个地址要登录，直接在已登录的 Cloudflare 标签页里打开即可）
+
 ### 缓存策略（`_headers` + 一处控制台设置）
 
 | 资源 | 缓存 | 理由 |
@@ -1304,29 +1324,56 @@ powershell -ExecutionPolicy Bypass -File "D:\obsidian\film-261103\网页制作�
 > 已在 **域名 → 缓存 → 配置 → 浏览器缓存 TTL = 遵循现有标头** 改掉，
 > 改完 `_headers` 的值才真正生效。
 
-### 踩过的三个坑
+### 踩过的四个坑
 
 1. **`_redirects` 不支持 404 状态码**
    官方文档写明：只支持 `200 / 301 / 302 / 303 / 307 / 308`，
    写成 `/README.md /404 404` 会被**静默忽略**（不报错，就是不生效）。
-   → 改成 `/README.md /404 301`，再放一个 `404.html`，
-   这样访问 `/README.md` 会被 301 到 `/404`，最终拿到**真正的 404 状态码**和 404 页面。
+   → 改成 `/README.md /404 301`，再放一个 `404.html`。
+   **实测行为**：`/README.md` → **301** → `/404`（Cloudflare 把 404 页挂在 `/404` 这个路径上，
+   直接请求它是 **200**），访问者看到的是 404 页面，看不到开发文档；
+   而**真正不存在的路径**（如 `/nope-xyz`）会拿到**货真价实的 404 状态码** + 404 页面。
+   404 页里带 `<meta name="robots" content="noindex">`，不会被搜索引擎收录。
 
 2. **Pages 会把未知路径回退成 index.html**
    站点只有一个 `index.html`，Pages 判定为 SPA，
    任何不存在的路径都会返回首页（200）。放上 `404.html` 之后才会走 404 流程。
 
-3. **构建输出目录 = `/` 时，构建要上传 111MB**
-   每次 push 都要把全部素材重新传一遍，**构建比想象中慢**（首次约 40 秒，
-   含 111MB 的一次性上传可能到几分钟）。等一下就好，不用重复 push。
+3. **构建输出目录 = `/` 时，构建要克隆 + 上传 111MB**
+   每次 push 都要把全部素材重新传一遍。**实测耗时**：
+   克隆 5~7 秒 + 构建 3~6 秒 + 部署 14 秒 ≈ **30 秒**。
+   比想象中快，不用重复 push。
+
+4. **构建并发只有 1，一个卡死全堵住**
+   见上面「万一构建卡在『克隆仓库』不动」。卡死的构建不会自己放弃，
+   后面的构建会一直排队（`queued`），看着像"仓库太大克隆不动"，其实是排队。
+   → 取消掉卡死的那个，下一个立刻就上。
 
 ### 已实测通过
 
+**线上可达性**
+
 - `https://stardust-mushu.fyi/` → **200**，TLS 校验通过，标题「牧舒的捕梦阁楼」✅
 - `https://mushu-portfolio.pages.dev/` → **200** ✅
-- 首页 / 作品 / 关于我 / 联系方式四屏渲染正常，**控制台 0 报错** ✅
-- 首屏 3 支视频正常加载（`/videos/hero/01-idle.mp4` → 200，4.4MB）✅
+- DNS 委派链正确：`.fyi` → `v0n0/v0n1/v0n2/v0n3/v2n0/v2n1.nic.fyi`
+  → `stardust-mushu.fyi` → `elma/sri.ns.cloudflare.com` → A `172.67.179.55` / `104.21.83.166` ✅
+
+**页面与交互（浏览器实测，正式域名）**
+
+- 首页渲染正常，3 支视频在播，**控制台 0 报错** ✅
+- 导航「作品」→ 塔罗牌阵**九张牌**铺开，桌布背景正常 ✅
+- 点开卡片 → **灯箱**全屏放映（带字幕）+ 右侧作品档案（背景 / 做法 / 反思）✅
+- 未知路径 → **404 状态码** + 暗调月亮 404 页（3776 字节，标题「这一页走丢了」）✅
+- `/README.md` → **301** → `/404`，开发文档不暴露在公开站点上 ✅
+
+**响应头**
+
 - `_headers` 生效：`/videos/*` → `max-age=2592000`；`/assets/css/base.css` → `max-age=0, must-revalidate` ✅
 - 安全头生效：`x-content-type-options`、`referrer-policy`、`x-frame-options` ✅
+- 404 响应自带 `Cache-Control: no-store` ✅
+
+**构建**
+
+- `push → 克隆 5~7 秒 → 构建 3~6 秒 → 部署 14 秒` → 线上更新，**约 30 秒** ✅
 - `www.stardust-mushu.fyi` **本轮没绑**（域名页可以随时加，想加说一声）
 
