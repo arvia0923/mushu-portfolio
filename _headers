@@ -2,7 +2,7 @@
   Cache-Control: public, max-age=2592000
 
 /assets/*
-  Cache-Control: public, max-age=2592000
+  Cache-Control: public, max-age=0, must-revalidate
 
 /*
   X-Content-Type-Options: nosniff
