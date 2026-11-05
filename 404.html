@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>这一页走丢了 · 牧舒的捕梦阁楼</title>
+<meta name="robots" content="noindex" />
+<meta name="theme-color" content="#0B0710" />
+<meta name="color-scheme" content="dark" />
+<style>
+  :root {
+    --ink: #0B0710;
+    --ink-2: #150E1C;
+    --gold: #E8C87A;
+    --gold-dim: #A98F52;
+    --moon: #F3E9D2;
+    --text: #E7DFD2;
+    --text-dim: #9A8FA6;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(120% 90% at 50% -10%, #241634 0%, rgba(36,22,52,0) 62%),
+      radial-gradient(80% 60% at 82% 108%, #1B1430 0%, rgba(27,20,48,0) 60%),
+      var(--ink);
+    color: var(--text);
+    font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", Georgia, serif;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 8vh 24px;
+    overflow: hidden;
+  }
+  .wrap { position: relative; max-width: 620px; }
+  .moon {
+    width: 132px; height: 132px; margin: 0 auto 34px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 36% 32%, #FFFDF6 0%, #F0E2BE 42%, #C9AE6E 78%, #8C7440 100%);
+    box-shadow:
+      0 0 60px rgba(232, 200, 122, 0.22),
+      0 0 140px rgba(150, 120, 220, 0.16);
+    position: relative;
+  }
+  .moon::after {
+    content: "";
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: var(--ink);
+    transform: translate(30%, -14%) scale(0.94);
+    opacity: .92;
+  }
+  .kicker {
+    font-size: 12px; letter-spacing: .42em; text-transform: uppercase;
+    color: var(--gold-dim); margin: 0 0 14px;
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  }
+  h1 {
+    margin: 0 0 18px;
+    font-size: clamp(30px, 6vw, 46px);
+    font-weight: 600;
+    letter-spacing: .06em;
+    color: var(--moon);
+  }
+  .lead {
+    margin: 0 auto 34px;
+    max-width: 30em;
+    font-size: 16px; line-height: 2;
+    color: var(--text-dim);
+  }
+  .lead em { color: var(--gold); font-style: normal; }
+  .actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  a.btn {
+    display: inline-block;
+    padding: 12px 26px;
+    border: 1px solid rgba(232, 200, 122, .38);
+    border-radius: 999px;
+    color: var(--gold);
+    text-decoration: none;
+    font-size: 14px; letter-spacing: .1em;
+    background: rgba(232, 200, 122, .06);
+    transition: background .25s ease, border-color .25s ease, color .25s ease;
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  }
+  a.btn:hover { background: rgba(232, 200, 122, .14); border-color: rgba(232, 200, 122, .7); color: #FFF3D6; }
+  a.btn.ghost { border-color: rgba(154, 143, 166, .3); color: var(--text-dim); background: transparent; }
+  a.btn.ghost:hover { color: var(--text); border-color: rgba(154, 143, 166, .6); background: rgba(255,255,255,.04); }
+  .sign { margin-top: 46px; font-size: 12px; letter-spacing: .3em; color: rgba(154,143,166,.5); }
+  .star {
+    position: absolute; width: 2px; height: 2px; border-radius: 50%;
+    background: var(--moon); opacity: .5;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="moon" aria-hidden="true"></div>
+  <p class="kicker">404 · Page Not Found</p>
+  <h1>这一页走丢了</h1>
+  <p class="lead">
+    你要找的页面不在这里。<br />
+    也许它只存在于某个<em>还没做完的梦</em>里——<br />
+    不如回到阁楼，看看那九张牌还亮着没有。
+  </p>
+  <div class="actions">
+    <a class="btn" href="/">回到首页</a>
+    <a class="btn ghost" href="/#deck">看看作品</a>
+  </div>
+  <p class="sign">牧舒的捕梦阁楼</p>
+</div>
+</body>
+</html>
