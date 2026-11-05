@@ -1976,6 +1976,29 @@ text-shadow: 0 1px 2px #000, 0 0 8px rgba(0,0,0,.9), 0 0 20px rgba(0,0,0,.8);
 - `作品.md` 的 lead 改成「九支片子，两个能玩的小网页」
 - 画廊 Base 自动收录新条目（`作品集/作品索引.base` 不用改）
 
-### 还没上线
+### 已上线
 
-本轮**仍然只改本地，没有 commit / push**。
+本轮**已 commit + push**：`46d169b`（`431fa6e..46d169b`，17 files changed, +2549 / −184）。
+Cloudflare Pages Git 直连自动构建，`https://stardust-mushu.fyi` 已经指向新版本。
+
+**线上实测**（1600×900）：
+
+- 互动摞发 2 张牌，编号是罗马数字 Ⅹ / Ⅺ
+- 「找东西」灯箱：iframe 正常加载（底图 + 均匀遮罩 + 「角色来源：熬肉」+ 按钮全在），
+  点「找皖皖」→ 求助次数变 1、台词切换成回应 —— 真的能玩
+- 灯箱右侧只有编号 / 标题 / 类型·年份·分辨率，没有 lead，也没有背景 / 做法 / 反思
+- 滚到「关于我」发牌器消失 ✓
+- 控制台 **0 报错**（只有 three.js r150+ 的既有弃用警告）
+
+### 一个 Cloudflare Pages 的坑（记一下）
+
+Pages 默认「HTML handling = automatic」：`.html` 文件会 **308** 到无扩展名路径。
+
+```
+/assets/deck/find-things.html  →  308  Location: /assets/deck/find-things  →  200 text/html
+```
+
+浏览器（含 iframe）会自己跟这个重定向，所以**功能上没问题**；
+但以后用 curl / 脚本自检时，直接请求 `.html` 只会拿到 308，**要跟一次重定向**才看得到正文。
+两个小网页里的图片用的是相对路径（`wanwan.webp`），
+重定向后基准目录仍是 `/assets/deck/`，图片照常解析。
