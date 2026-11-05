@@ -35,6 +35,9 @@ html::-webkit-scrollbar { width: 0; height: 0; }
    进入站点视图后解锁，页面恢复正常滚动。 */
 html.is-view-hero { overflow: hidden; }
 
+/* 开屏加载期间锁住滚动（开屏结束后由 preloader.js 摘掉） */
+html.is-preloading { overflow: hidden; }
+
 /* ── 视图二：站点层（作品 / 关于 / 联系） ──────────────── */
 .siteview {
   position: relative;

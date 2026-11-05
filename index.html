@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="is-preloading">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -18,8 +18,140 @@
 <link rel="stylesheet" href="assets/css/lanyard.css" />
 <link rel="stylesheet" href="assets/css/hero.css" />
 <link rel="stylesheet" href="assets/css/deck.css" />
+
+<!-- ══════════════════════════════════════════════════════════
+     开屏加载动画（Preloader）· 内联关键样式
+     ───────────────────────────────────────────────────────────
+     为什么内联：开屏必须**立刻**铺满屏幕，不能等外链样式表 ——
+     否则先白一下再冒出来，反而更突兀。颜色写成字面量
+     （对应 tokens.css 里的同名变量），因为 tokens.css 是外链，
+     等它到了 var() 才生效，这里不能等。
+     ══════════════════════════════════════════════════════════ -->
+<style>
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+  padding: 2rem 1.5rem;
+  background: radial-gradient(128% 92% at 50% 16%, #171029 0%, #0B0710 56%, #07040B 100%);
+  color: #B9B3C9;
+  font-family: "Optima", "Iowan Old Style", "Source Han Serif SC", "Noto Serif SC", "Songti SC", Georgia, serif;
+  transition: opacity .7s cubic-bezier(.4, 0, .2, 1), visibility .7s linear;
+}
+.preloader.is-leaving { opacity: 0; visibility: hidden; pointer-events: none; }
+
+/* 星光：几个点，缓慢明灭 */
+.preloader__sky {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.6px 1.6px at 16% 24%, rgba(232, 224, 208, .9), transparent 60%),
+    radial-gradient(1.1px 1.1px at 71% 13%, rgba(201, 168, 106, .85), transparent 60%),
+    radial-gradient(1.3px 1.3px at 83% 42%, rgba(232, 224, 208, .55), transparent 60%),
+    radial-gradient(1px 1px at 38% 72%, rgba(140, 122, 192, .8), transparent 60%),
+    radial-gradient(1.4px 1.4px at 57% 88%, rgba(232, 224, 208, .5), transparent 60%),
+    radial-gradient(1px 1px at 8% 62%, rgba(201, 168, 106, .6), transparent 60%);
+  animation: ms-preloader-twinkle 4.6s ease-in-out infinite;
+}
+
+/* 月相符号：缓慢旋转（沿用站点的 ☾） */
+.preloader__moon {
+  position: relative;
+  z-index: 1;
+  font-size: clamp(2.6rem, 7vw, 3.6rem);
+  line-height: 1;
+  color: #C9A86A;
+  text-shadow: 0 0 30px rgba(201, 168, 106, .45);
+  animation: ms-preloader-spin 9s linear infinite;
+}
+
+.preloader__title {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: clamp(1.05rem, 2.6vw, 1.35rem);
+  font-weight: 500;
+  letter-spacing: .42em;
+  text-indent: .42em;
+  color: #E8E0D0;
+}
+.preloader__sub {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: .7rem;
+  letter-spacing: .34em;
+  text-indent: .34em;
+  color: #7E7891;
+  text-transform: uppercase;
+}
+.preloader__status {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  min-height: 1em;
+  font-size: .68rem;
+  letter-spacing: .2em;
+  color: #7E7891;
+}
+
+/* 进度条：一条暗金细线，随资源加载推进 */
+.preloader__bar {
+  position: relative;
+  z-index: 1;
+  width: min(230px, 54vw);
+  height: 1px;
+  overflow: hidden;
+  background: rgba(201, 168, 106, .18);
+}
+.preloader__bar > span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(140, 122, 192, .7), #C9A86A);
+  box-shadow: 0 0 10px rgba(201, 168, 106, .55);
+  transition: width .45s cubic-bezier(.16, .84, .44, 1);
+}
+
+@keyframes ms-preloader-spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+@keyframes ms-preloader-twinkle { 0%, 100% { opacity: .35; } 50% { opacity: .9; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .preloader__moon, .preloader__sky { animation: none; }
+}
+</style>
+<noscript><style>.preloader { display: none !important; }</style></noscript>
+
+<!-- 保险丝：万一 preloader.js 没跑起来，8 秒后强制撤掉开屏
+     （同时解除滚动锁 —— 只藏遮罩不摘锁，页面会永远滚不动） -->
+<script>
+  window.setTimeout(function () {
+    var p = document.getElementById('preloader');
+    if (p) p.classList.add('is-leaving');
+    document.documentElement.classList.remove('is-preloading');
+  }, 8000);
+</script>
 </head>
 <body>
+
+<!-- ══════════════════════════════════════════════════════════
+     开屏加载动画
+     等 3D 工作牌 + 照片都就位了才淡出（见 assets/js/preloader.js）
+     ══════════════════════════════════════════════════════════ -->
+<div class="preloader" id="preloader" role="status" aria-live="polite">
+  <div class="preloader__sky" aria-hidden="true"></div>
+  <div class="preloader__moon" aria-hidden="true">☾</div>
+  <p class="preloader__title">牧舒的捕梦阁楼</p>
+  <p class="preloader__sub">The Illusion Cabinet</p>
+  <div class="preloader__bar" aria-hidden="true"><span></span></div>
+  <p class="preloader__status">正在唤醒捕梦阁楼</p>
+</div>
 
 <a class="skip-link" href="#deck">跳到作品</a>
 
@@ -119,7 +251,14 @@
             <span class="lanyard__corner lanyard__corner--tr" aria-hidden="true"></span>
             <span class="lanyard__corner lanyard__corner--bl" aria-hidden="true"></span>
             <span class="lanyard__corner lanyard__corner--br" aria-hidden="true"></span>
-            <img class="lanyard__photo" src="assets/lanyard/portrait.jpg" alt="牧舒 · 工作牌" />
+            <!-- 照片：fetchpriority="low" + loading="lazy" ——
+               浏览器默认会把 <img> 当高优先级资源抢先下载，
+               于是「扁平照片」会跑在 3D 牌体前面，视觉上很突兀。
+               降优先级 + 懒加载，让它跟 3D 组件几乎同时出现。
+               （配套改动：.lanyard__fallback 默认 display:none，
+                 否则懒加载不会生效，见 assets/css/hero.css） -->
+          <img class="lanyard__photo" src="assets/lanyard/portrait.jpg" alt="牧舒 · 工作牌"
+               fetchpriority="low" loading="lazy" decoding="async" width="876" height="1170" />
             <span class="lanyard__badge" aria-hidden="true">☾</span>
             <span class="lanyard__name">牧舒</span>
             <span class="lanyard__role">AIGC / 影像 / 视觉实验</span>
@@ -331,5 +470,7 @@
 <script src="assets/js/lanyard.js"></script>
 <script src="assets/js/deck.js"></script>
 <script src="assets/js/main.js"></script>
+<!-- 开屏：放在最后 —— 要等 config.js / main.js 都就位，才拿得到贴图清单和就绪信号 -->
+<script src="assets/js/preloader.js"></script>
 </body>
 </html>

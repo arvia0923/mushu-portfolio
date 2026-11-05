@@ -1184,6 +1184,19 @@ if (foilStrength > 0.0) {
     var imageToken = 0;
     var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    /* ── 就绪信号 ────────────────────────────────────────────
+       牌面把照片真正画上去的那一刻 resolve。
+       开屏动画等它 —— 退场时看到的已经是「3D 牌 + 照片」的完整状态，
+       而不是一张先蹦出来的静态照片。 */
+    var readyResolve;
+    var ready = new Promise(function (resolve) { readyResolve = resolve; });
+    var readyDone = false;
+    function markReady() {
+      if (readyDone) return;
+      readyDone = true;
+      readyResolve(true);
+    }
+
     var paintFaces = function () {
       var color = parseColor(settings.cardColor, [1, 1, 1]);
       var width = FACE_WIDTH;
@@ -1311,6 +1324,7 @@ if (foilStrength > 0.0) {
           images.frame = res[3];
           paintFaces();
           repaintStrap();
+          markReady();
         });
       }
       var faceKey = layoutKey + '|' + settings.cardColor + '|' + settings.imageFit + '|' + settings.frameImage;
@@ -1746,6 +1760,8 @@ if (foilStrength > 0.0) {
     return {
       settings: settings,
       apply: apply,
+      /* 牌面贴图就绪的承诺（照片已经画上牌面）—— 开屏动画等它 */
+      ready: ready,
       /* 自测用：卡牌在画布里的归一化包围盒（0~1，左上原点）。
          四个数都落在 0~1 内 = 卡牌完整可见，没有被容器裁掉。 */
       cardBox: function () {
@@ -1767,6 +1783,7 @@ if (foilStrength > 0.0) {
       },
       destroy: function () {
         alive = false;
+        markReady();
         cancelAnimationFrame(raf);
         resizeObserver.disconnect();
         intersectionObserver.disconnect();

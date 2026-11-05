@@ -275,17 +275,22 @@
   position: absolute;
   inset: 0;
 }
-/* 3D 挂上后，静态降级版让位 */
-.lanyard.is-3d .lanyard__fallback { display: none; }
-
-/* 静态降级版：没有 WebGL、或用 file:// 打开时显示 */
+/* 静态降级版：默认**藏着**，只有 3D 真的起不来时才顶上来。
+   为什么默认藏着 —— 里面的 <img> 是工作牌照片：只要它还在版面上，
+   浏览器就会立刻把 portrait.jpg 拉下来（display:none 也照样下载），
+   于是「一张扁平的照片」会抢在 three.js + 牌框贴图前面蹦出来，很突兀。
+   藏起来 + 给 img 加 loading="lazy"，这张图才会等到真要用时才下载。 */
 .lanyard__fallback {
   position: absolute;
   inset: 0;
-  display: flex;
+  display: none;
   flex-direction: column;
   align-items: center;
 }
+/* 3D 没起来（无 WebGL / file:// / 脚本没加载）→ 静态版顶上 */
+.lanyard.no-3d .lanyard__fallback { display: flex; }
+/* 3D 挂上后，静态降级版让位 */
+.lanyard.is-3d .lanyard__fallback { display: none; }
 .lanyard__cord {
   width: 1px;
   height: clamp(4rem, 16vh, 10rem);
