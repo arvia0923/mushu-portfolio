@@ -2098,3 +2098,104 @@ Cloudflare Pages Git 直连自动构建，`https://stardust-mushu.fyi` 已经指
 **桌面端确认未变**：`git diff` 显示桌面规则只改了定位机制
 （`bottom:0 + height:100vh` → `inset:0`；`center bottom / 100% auto` → `center center / cover`），
 在 16:9 视口下渲染完全等价；透明度仍是 0.30、遮罩分档没动 —— 这轮只动手机。
+
+---
+
+## 二十七 · 根因定位：横向溢出触发「缩放适配」（2026-11-06，已实测，已上线）
+
+上一轮（§二十六）把两个手机端问题的根因判成「`min()` / `vh` / `vw` 的声明在真机上没被解析」。
+**这个判断是错的。** 这一轮用两套新工具复现并量到了真值：
+
+- `_dev/overflow-scan.html`：iframe 套 390×844 手机视口，遍历全页面元素，
+  把「右边缘超出视口 / 自身 `scrollWidth` 溢出」的盒子全列出来，逐个状态扫。
+- `_dev/cdp-mobile.ps1`：**用 Edge 的 CDP 开真·移动端模拟**
+  （`Emulation.setDeviceMetricsOverride` mobile=true，393×852@3x，iPhone UA），
+  沿途量 `innerWidth` / `scrollWidth` / 媒体查询命中情况 / 灯箱各元素实际尺寸，并截图。
+
+### 真正的机制：横向溢出 → 浏览器「缩放适配」
+
+手机浏览器（华为浏览器 / Chrome 手机版）里，只要页面里有一个盒子比屏幕宽，
+浏览器就会把整页缩到能塞下为止（shrink-to-fit）。表现是：
+
+- 页面能被整体缩小，缩到 40% 还嫌大
+- `window.innerWidth` 从 393 变成 **976**（布局宽度被撑开）
+- 固定定位元素（导航条、灯箱、桌布）跟着变成 976 宽
+- **媒体查询仍按设备宽度 393 判定**，但布局宽度已经不是 393 了
+
+本轮实测（Edge 156 + CDP 移动端模拟）：
+
+| | 修前 | 修后 |
+|---|---|---|
+| 发牌后 `window.innerWidth` | 976 | **393** |
+| 发牌后 `documentElement.scrollWidth` | 976 | **393** |
+| 页面缩放比 393 / 976 | 0.403（压成 40%） | **1.000** |
+| 灯箱舞台宽 | 640px（撑破视口） | **361px**（视口内容宽） |
+| 作品档案栏宽 | 640px（文字被右边缘切断） | **361px** |
+
+### 溢出源头一：牌堆退场的 `translateX(±150vw)`（`46d169b` 引入）
+
+`deck.js` 发牌时给未选中的牌堆写 `--out-x: ±150vw`，CSS 用
+`transform: translateX(var(--out-x))` 让它飞出屏幕。
+**位移过的盒子会计入文档的「可滚动溢出宽度」** —— 发完牌整页横向宽度被撑到 976px
+（视口才 393），浏览器随即触发缩放适配。
+
+「观影背景发黑」就是这么来的：布局宽度 976 时，桌布那张 1280×720 的图被 `cover`
+放大 2.6 倍，只截到中间一块深色区域，看着就是全黑。
+
+修法：`.deck { overflow-x: clip }` —— 把溢出裁在作品区自己的框里（框宽 = 屏幕宽），
+牌堆看起来照旧是飞出屏幕，但不再撑宽整页。`html` / `body` 同步加 `overflow-x: clip` 兜底
+（`clip` 不产生滚动容器，比原来的 `overflow-x: hidden` 干净）。
+
+### 溢出源头二：灯箱舞台把 grid 轨道撑爆（`84f0127` 引入 —— 就是上一轮那个「返修」）
+
+`.lightbox` 是 grid 容器，里面只放一个 `.lightbox__stage`。
+默认的 `auto` 轨道按「子项的 max-content 宽度」定尺寸，而子项写的是
+`width: 100%`（百分比在算内在尺寸时按 `auto` 处理）+ `max-width: 40rem`
+→ 轨道直接取 **640px**，在 393 的视口上撑破了。
+
+舞台在 976 宽的布局里居中 → 左边缘落在 **x=168**；视频（278px）再居中一次
+→ 落在 **349..627** → 屏幕只露出右边 **44px** 一条缝；档案文字从 168 开始被右边缘切断。
+—— 和用户 DevTools（iPhone 15 Pro 393×852）的截图**逐像素对上**。
+
+初版（`07f7e0b`）写的是 `width: min(1560px, 96vw)` = 377px，所以初版是好的；
+改成 `width:100% + max-width` 才炸 —— 也就是**上一轮的返修把灯箱弄坏了**。
+
+修法：`.lightbox { grid-template-columns: minmax(0, 1fr) }`，
+轨道老老实实取容器可用宽度（`minmax(0,…)` 里的 0 就是在说「允许缩到 0，不许撑破」）。
+
+### 断点：900 → 980
+
+`46d169b` 把灯箱单栏的断点从初版的 `max-width: 980px` 降到了 `900px`。
+溢出后的布局宽度是 976px —— **刚好卡在 980 下面、900 上面**：
+初版的 980 侥幸接住了，新断点接不住。
+这一轮把灯箱单栏的断点挪回 **980px**（牌阵的 900 / 620 断点没动，桌面观感不受影响）。
+
+### 已上线
+
+本轮**已 commit + push**：`9db1a2a`（`93e31e6..9db1a2a`，2 files changed, +35 / −6），
+`https://stardust-mushu.fyi` 已指向新版本。
+
+线上核验（同一套 CDP 移动端模拟，直接打线上域名）：
+
+- 发牌后 `innerWidth` / `scrollWidth` = **393 / 393**，缩放比 **1.000**
+- 灯箱舞台 **361px**、作品档案栏 **361px**、视频 **278×494**（真实 9:16，居中，控件齐全）
+- 桌布回到竖版 `tablecloth-mobile.jpg`（opacity 0.44），「观影」背景清晰可见
+- 桌面 1500×880 回归**零变化**：舞台 1404×722、视频 406×722、桌布 opacity 0.30
+
+### 留个工具
+
+`_dev/cdp-mobile.ps1`：**真·移动端模拟探针**。
+只靠 iframe 自测台不够 —— iframe 里媒体查询按 iframe 宽度算，永远看不到
+「布局宽度被撑开」这件事；只有 CDP 的移动端模拟才会触发缩放适配。
+
+```powershell
+# 手机 393×852（iPhone 15 Pro）
+powershell -ExecutionPolicy Bypass -File .\_dev\cdp-mobile.ps1 `
+  -Url "http://localhost:8788/" -Shot "E:\out.png"
+# 桌面 1500×880 回归（-Desktop 关掉移动端模拟）
+powershell -ExecutionPolicy Bypass -File .\_dev\cdp-mobile.ps1 `
+  -Url "http://localhost:8788/" -Width 1500 -Height 880 -Desktop
+```
+
+沿途打印每个状态的 `innerWidth / scrollWidth / 媒体查询命中 / 溢出元素清单 / 灯箱尺寸`，
+并可存 `-Shot`（灯箱截图）、`-ShotDeck`（发牌瞬间的牌阵截图）。
