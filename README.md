@@ -2199,3 +2199,87 @@ powershell -ExecutionPolicy Bypass -File .\_dev\cdp-mobile.ps1 `
 
 沿途打印每个状态的 `innerWidth / scrollWidth / 媒体查询命中 / 溢出元素清单 / 灯箱尺寸`，
 并可存 `-Shot`（灯箱截图）、`-ShotDeck`（发牌瞬间的牌阵截图）。
+
+---
+
+## 二十八 · 站点图标：星月 favicon（2026-11-06，已实测，已上线）
+
+用户提的：浏览器标签栏现在显示默认地球图标，想换成顶栏左上角那颗「星月」。
+
+### 图形
+
+直接用顶栏 `.masthead__glyph` 的同一组路径（新月 `M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z`
++ 四芒星），但为了**在 16×16 的标签页尺寸下还看得清**做了三处调整：
+
+1. **新月改成实心** —— 原版是 16% 填充 + 1.15 描边，缩到 16px 会糊成一团灰
+2. **星星放大 1.26 倍并提亮**（`#F7EBCC`），当画面里的高光点
+3. **加午夜紫圆角底板 + 一圈暗金细边** —— 在浅色 / 深色浏览器栏里都立得住，
+   不会变成一个看不清的小方块
+
+配色全部取自 `tokens.css`：`#0B0710`（ink-900）/ `#241631` / `#C9A86A`（gold）。
+
+### 文件
+
+```
+assets/icon/favicon.svg        母版（矢量，1.9KB）
+assets/icon/favicon-16.png     标签页用
+assets/icon/favicon-32.png
+assets/icon/favicon-48.png
+assets/icon/favicon-192.png    Web App Manifest 用
+assets/icon/favicon-512.png
+assets/icon/favicon.ico        16 / 32 / 48 三合一（老浏览器兜底，6KB）
+assets/icon/apple-touch-icon.png  180×180，iOS「加到主屏幕」用
+site.webmanifest               Android / 桌面 PWA 用
+```
+
+页面里挂 6 个标签（`index.html` 与 `404.html` 都有）：
+
+```html
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icon/favicon-32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="assets/icon/favicon-16.png" />
+<link rel="icon" type="image/svg+xml" href="assets/icon/favicon.svg" />
+<link rel="shortcut icon" href="assets/icon/favicon.ico" />
+<link rel="apple-touch-icon" href="assets/icon/apple-touch-icon.png" />
+<link rel="manifest" href="site.webmanifest" />
+```
+
+### 两个坑
+
+**① XML 注释里不能出现连续两个连字符。**
+第一版母版的注释里写了变量原名 `--ink-900`，SVG 直接解析失败，
+渲染出来全是浏览器的「XML 报错页」——而且报错行号因为多字节字符还偏了，很难查。
+注释里改用中文描述就没事了。
+
+**② `site.webmanifest` 必须以 `application/manifest+json` 返回，Chrome 才认。**
+本地静态服务器给的是 `application/octet-stream`，Chrome 会直接拒收
+（控制台报 `Manifest load failed`）。在 `_headers` 里补了一条：
+
+```
+/site.webmanifest
+  Content-Type: application/manifest+json
+```
+
+### 怎么重新生成
+
+母版改了重跑一遍 `_dev/make-icons.ps1` 就行 —— 它用 CDP 把 SVG 渲染成各尺寸 PNG
+（透明背景），再把 16/32/48 打包成 ICO：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\_dev\make-icons.ps1 -Base "http://localhost:8788" -OutDir "assets\icon"
+```
+
+（需要本地静态服务器先跑起来，因为渲染页是去取 `/assets/icon/favicon.svg` 的。）
+
+### 已上线
+
+本轮**已 commit + push**：`f8b7494`（`03c3794..f8b7494`，12 files changed, +88）。
+
+线上核验：
+
+- 8 个图标文件全部 **200**，MIME 正确（`image/svg+xml` / `image/vnd.microsoft.icon` / `image/png`）
+- `site.webmanifest` → 200 **`application/manifest+json`**（`_headers` 规则生效）
+- Chrome CDP `Page.getAppManifest` → **解析成功，0 报错**，站点名「牧舒的捕梦阁楼」
+- 页面里 6 个图标标签齐全
+
+> 提醒：浏览器对 favicon 的缓存非常顽固，改完图标可能要清一下缓存 /
+> 强制刷新（Ctrl+F5）才看得到变化。
