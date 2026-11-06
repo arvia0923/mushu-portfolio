@@ -8,6 +8,17 @@
 <meta name="theme-color" content="#0B0710" />
 <meta name="color-scheme" content="dark" />
 
+<!-- 站点图标：顶栏左上角那颗「星月」（assets/icon/favicon.svg 是母版）
+     顺序：PNG 32 → PNG 16 → SVG → ICO。
+     浏览器会挑自己认得的最好的那个；SVG 在 Chrome / Edge / Firefox / Safari 16+
+     是矢量的，缩到任何尺寸都不糊，老浏览器再退到 PNG / ICO。 -->
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icon/favicon-32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="assets/icon/favicon-16.png" />
+<link rel="icon" type="image/svg+xml" href="assets/icon/favicon.svg" />
+<link rel="shortcut icon" href="assets/icon/favicon.ico" />
+<link rel="apple-touch-icon" href="assets/icon/apple-touch-icon.png" />
+<link rel="manifest" href="site.webmanifest" />
+
 <link rel="preload" as="video" href="videos/hero/01-idle.mp4" type="video/mp4" />
 <link rel="preload" as="video" href="videos/hero/02-rotating.mp4" type="video/mp4" />
 <link rel="preload" as="video" href="videos/hero/03-final.mp4" type="video/mp4" />

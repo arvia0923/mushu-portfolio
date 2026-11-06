@@ -4,6 +4,12 @@
 /assets/*
   Cache-Control: public, max-age=0, must-revalidate
 
+# Web App Manifest：Chrome 只认 application/manifest+json，
+# 类型不对它会直接拒收（控制台报 Manifest load failed）。
+/site.webmanifest
+  Content-Type: application/manifest+json
+  Cache-Control: public, max-age=0, must-revalidate
+
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin

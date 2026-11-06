@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 牧舒的捕梦阁楼 · 站点图标
+     图形取自顶栏左上角的「星月」标记（index.html 的 .masthead__glyph）。
+     为了在 16x16 的标签页尺寸下还看得清，这里做了三处调整：
+       1. 新月改成实心（原来是 16% 填充 + 1.15 描边，缩到 16px 会糊成一团）
+       2. 星星放大并提亮，作为画面里的高光点
+       3. 加了午夜紫的圆角底板 + 一圈暗金细边，在浅色 / 深色浏览器栏里都立得住
+     配色全部取自 assets/css/tokens.css（ink-900 与 gold 两个变量）。
+     注意：XML 注释里不能出现连续两个连字符，注释别写变量名的原文。 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <radialGradient id="bg" cx="32%" cy="16%" r="94%">
+      <stop offset="0" stop-color="#241631"/>
+      <stop offset="0.58" stop-color="#150E1C"/>
+      <stop offset="1" stop-color="#0B0710"/>
+    </radialGradient>
+    <linearGradient id="au" x1="0.18" y1="0" x2="0.72" y2="1">
+      <stop offset="0" stop-color="#F2E3BA"/>
+      <stop offset="0.52" stop-color="#D9BA7C"/>
+      <stop offset="1" stop-color="#B4914E"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="31" height="31" rx="7" fill="url(#bg)"
+        stroke="#C9A86A" stroke-opacity="0.30" stroke-width="1"/>
+
+  <!-- 新月：与顶栏同一路径 M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z -->
+  <g transform="translate(0.9 0.6) scale(1.2)" fill="url(#au)">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </g>
+
+  <!-- 星：同一路径，稍微上移一点，避开新月的边缘 -->
+  <g transform="translate(0.75 0.45) scale(1.26)" fill="#F7EBCC">
+    <path d="M18.6 4.2l.62 1.58 1.58.62-1.58.62-.62 1.58-.62-1.58-1.58-.62 1.58-.62.62-1.58z"/>
+  </g>
+</svg>
