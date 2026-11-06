@@ -2003,7 +2003,7 @@ Pages 默认「HTML handling = automatic」：`.html` 文件会 **308** 到无�
 两个小网页里的图片用的是相对路径（`wanwan.webp`），
 重定向后基准目录仍是 `/assets/deck/`，图片照常解析。
 
-## 二十六 · 两项手机端返修（2026-11-06，已实测，暂未上线）
+## 二十六 · 两项手机端返修（2026-11-06，已实测，已上线）
 
 用户反馈两个手机上的问题。这轮的核心结论：**两处都出在「依赖 `min()` / `vh` /
 `vw` 的声明」上** —— 这些声明一旦在真实手机浏览器里没被解析/算对，
@@ -2079,3 +2079,22 @@ Pages 默认「HTML handling = automatic」：`.html` 文件会 **308** 到无�
 「手机」发指令（关灯箱 / 开第 N 张 / 滚到牌阵 / 量灯箱）。
 这次两个 bug 的定位全靠它 —— 本机没有移动端模拟，靠 iframe 才能让
 媒体查询按手机宽度生效。
+
+### 已上线
+
+本轮**已 commit + push**：`84f0127`（`4a5aefe..84f0127`，6 files changed, +150 / −20，
+新增 `assets/deck/tablecloth-mobile.jpg`）。
+Cloudflare Pages Git 直连自动构建，`https://stardust-mushu.fyi` 已经指向新版本。
+
+**线上核验**：
+
+- 线上 `base.css` / `deck.css` / `deck.js` / `tablecloth-mobile.jpg` 与本地**字节级一致**
+  （SHA256 相同；`index.html` 的唯一差异是 Cloudflare 自动改写的邮箱保护，与提交无关）
+- 线上开「观影」→ 9 张牌铺开，背后的占卜桌布清楚可见
+- 线上点开竖版作品「冷感高奢手提包」→ 灯箱视频是**真实 9:16 的竖框**（不再是一宽条黑边），
+  右侧作品档案栏满宽，「背景 / 做法 / 反思」照旧
+- 控制台 **0 报错**
+
+**桌面端确认未变**：`git diff` 显示桌面规则只改了定位机制
+（`bottom:0 + height:100vh` → `inset:0`；`center bottom / 100% auto` → `center center / cover`），
+在 16:9 视口下渲染完全等价；透明度仍是 0.30、遮罩分档没动 —— 这轮只动手机。
