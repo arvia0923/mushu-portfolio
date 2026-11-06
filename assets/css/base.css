@@ -57,23 +57,30 @@ html.is-preloading { overflow: hidden; }
     visibility 0s linear 0s;
 }
 
-/* ── 站点层背景：占卜桌布（固定在视口底部，滚动时不跟着走） ──
+/* ── 站点层背景：占卜桌布（钉在视口上，滚动时不跟着走） ──
    作品 / 关于我 / 联系方式 三页共用这一张桌布。
 
    为什么 position:fixed 仍然是「相对视口」：
    .siteview 只做了 opacity 淡入（没有 transform / filter / perspective），
    所以不会生成包含块，fixed 子元素照旧钉在视口上。
 
+   为什么用 inset:0，而不是 bottom:0 + height:100vh：
+   手机上 vh = 顶部地址栏收起时的「大视口」高度，比实际能看见的那一屏高出一截。
+   于是 height:100vh 的底边被推到屏幕外头，background-position:center bottom
+   对齐的那张图也跟着跑出可视区 —— 桌布就整块消失了（手机上打开「观影」发完牌，
+   背景只剩一层渐变，就是这么来的）。inset:0 让这块布严丝合缝盖住可见视口，
+   背景再用 cover + center 居中裁切，怎么裁都不会跑掉。
+
    为什么 z-index 0 就够：
    .deck / .page / .foot 都是 position:relative + z-index:20（--z-deck），
    天然盖在这张 z-index:0 的桌布上面。 */
 .siteview__cloth {
   position: fixed;
-  left: 0; right: 0; bottom: 0;
-  height: 100vh;
+  inset: 0;
+  height: auto;
   z-index: 0;
   pointer-events: none;
-  background: url("../deck/tablecloth-v3.jpg") center bottom / 100% auto no-repeat;
+  background: url("../deck/tablecloth-v3.jpg") center center / cover no-repeat;
   opacity: 0.30;
 }
 /* 遮罩：上缘淡出融进页面底色，中段留出桌布，下缘压暗保住页脚可读性 */
@@ -87,11 +94,19 @@ html.is-preloading { overflow: hidden; }
     rgba(11, 7, 16, 0.62) 62%,
     rgba(11, 7, 16, 0.92) 100%);
 }
-/* 窄屏：桌布铺满高度（居中裁切），不然只剩窄窄一条 */
+/* 窄屏：换竖版裁切图（115KB，比桌面版 388KB 轻得多），
+   并把遮罩调淡 —— 牌阵一铺满，桌布只剩两侧几条缝，得看得见才算数。 */
 @media (max-width: 760px) {
   .siteview__cloth {
-    background-size: auto 100%;
-    opacity: 0.26;
+    background-image: url("../deck/tablecloth-mobile.jpg");
+    opacity: 0.44;
+  }
+  .siteview__cloth::after {
+    background: linear-gradient(to bottom,
+      rgba(11, 7, 16, 0.90) 0%,
+      rgba(11, 7, 16, 0.28) 24%,
+      rgba(11, 7, 16, 0.34) 66%,
+      rgba(11, 7, 16, 0.78) 100%);
   }
 }
 

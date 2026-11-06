@@ -520,6 +520,7 @@
   z-index: var(--z-lightbox);
   display: grid;
   place-items: center;
+  padding: 1rem;                                  /* 兜底：clamp() 不被支持时也留边 */
   padding: clamp(1rem, 4vw, 3rem);
   background: rgba(6, 4, 10, 0.985);
   animation: lbFade var(--dur-mid) var(--ease-out);
@@ -527,20 +528,32 @@
 .lightbox[hidden] { display: none; }
 @keyframes lbFade { from { opacity: 0; } to { opacity: 1; } }
 
-/* 左：放映；右：作品档案 */
+/* 左：放映；右：作品档案
+   ⚠️ 宽度别用 min(1560px, 96vw) —— 手机上这条声明一被丢弃，
+   整块舞台就退回「内容撑出来的宽度」，视频被压成一条缝（手机上看到的窄条）。
+   width:100% + max-width 不依赖 min()，任何浏览器都算得对。 */
 .lightbox__stage {
   margin: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(18rem, 0.75fr);
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
   gap: clamp(1rem, 2.6vw, 2.2rem);
   align-items: start;
-  width: min(1560px, 96vw);
+  width: 100%;
+  max-width: 1560px;
   max-height: 94vh;
 }
 .lightbox__screen { min-width: 0; }
+/* 视频框按作品的真实比例走（deck.js 会把 aspect-ratio 改成 1440/2560 这种），
+   两个方向都留 auto，浏览器就用 max-width / max-height 在不破坏比例的前提下
+   反推另一边 —— 竖版片子在窄屏上占满高度、不会被压成中间一条；横版占满宽度。 */
 .lightbox__video {
-  width: 100%;
+  width: auto;
+  height: auto;
+  max-width: 100%;
   max-height: 82vh;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  margin: 0 auto;
   background: #000;
   border: 1px solid var(--gold-dim);
 }
@@ -548,10 +561,10 @@
 
 /* 互动作品：2:3 的细框，里面跑着真的能玩的小网页 */
 .lightbox__embed {
-  height: min(82vh, 33rem, 138vw);
   aspect-ratio: 2 / 3;
-  width: auto;
-  max-width: 92vw;
+  width: 92%;
+  max-width: 22rem;
+  height: auto;
   margin: 0 auto;
   border: 1px solid var(--gold-dim);
   border-radius: 3px;
@@ -666,11 +679,12 @@ body.is-lightbox-open .scroll-cue { opacity: 0; pointer-events: none; }
   }
   .lightbox__stage {
     grid-template-columns: minmax(0, 1fr);
-    width: min(680px, 94vw);
+    width: 100%;
+    max-width: 40rem;
     max-height: none;
   }
-  .lightbox__video { max-height: 56vh; }
-  .lightbox__embed { height: min(70vh, 30rem, 138vw); }
+  .lightbox__video { max-height: 58vh; }
+  .lightbox__embed { width: 100%; max-width: 22rem; }
   .lightbox__info {
     max-height: none;
     overflow: visible;
@@ -678,9 +692,14 @@ body.is-lightbox-open .scroll-cue { opacity: 0; pointer-events: none; }
   }
 }
 @media (max-width: 620px) {
-  .deck__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* 两列牌阵收窄居中：留出两侧的桌布，别让牌铺满整屏把桌面全遮掉 */
+  .deck__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 20.5rem;
+    margin-inline: auto;
+  }
   .deck__grid.is-single { max-width: 13rem; }
-  .deck__grid.is-pair { max-width: 100%; }
+  .deck__grid.is-pair { max-width: 20.5rem; }
   .deck { padding-top: 5.5rem; }
   /* 窄屏：两摞牌要挤得下 */
   .pile { width: clamp(6.5rem, 38vw, 9rem); }

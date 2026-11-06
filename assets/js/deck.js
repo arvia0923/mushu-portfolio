@@ -513,6 +513,18 @@
     }, this);
   };
 
+  /* 从作品档案里的分辨率（1440×2560）解析出 CSS 的 aspect-ratio 值。
+     「响应式网页」这种没有固定比例的，返回空串，交给 CSS 的默认值。 */
+  Deck.prototype.videoRatio = function (res) {
+    if (!res) return '';
+    var m = /(\d{2,5})\s*[×xX*]\s*(\d{2,5})/.exec(String(res));
+    if (!m) return '';
+    var w = parseInt(m[1], 10);
+    var h = parseInt(m[2], 10);
+    if (!w || !h) return '';
+    return w + ' / ' + h;
+  };
+
   Deck.prototype.open = function (w) {
     if (!this.lb) return;
     this.openWork = w;
@@ -525,6 +537,12 @@
       if (!embed) {
         this.lbVideo.src = w.video;
         this.lbVideo.poster = w.cover;
+        /* 按作品自己的分辨率给视频框定比例（1440×2560 这种）。
+           不这么做的话，竖版片子在窄屏上会被挤成「上下都黑边、左右留白」的一条；
+           定了比例，视频框就贴着片子真实形状走 —— 竖版占满高度，横版占满宽度。 */
+        var ar = this.videoRatio(w.res);
+        if (ar) this.lbVideo.style.aspectRatio = ar;
+        else this.lbVideo.style.aspectRatio = '';
       }
     }
     if (this.lbEmbed) {
