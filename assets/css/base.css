@@ -7,6 +7,14 @@
 html {
   scroll-behavior: auto;           /* 滚动由脚本接管，别让浏览器再插一脚 */
   background: var(--ink-900);
+  /* 横向溢出直接裁掉。
+     ⚠️ 这条不是为了「好看」，是防手机端浏览器的「缩放适配」：
+     页面里只要有任何一个盒子比屏幕宽，移动端浏览器就会把整页缩到能塞下为止
+     （华为浏览器 / Chrome 手机版都这样），页面上的一切会缩成 40%，
+     媒体查询虽然仍按设备宽度算，但布局宽度已经被撑到几百像素宽 ——
+     于是「观影背景发黑」「灯箱挤成一条」全是这个机制带出来的。
+     overflow:clip 不产生滚动容器，比 overflow:hidden 干净。 */
+  overflow-x: clip;
 }
 
 body {
@@ -23,7 +31,7 @@ body {
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* 隐藏默认滚动条，但保留滚动能力 */

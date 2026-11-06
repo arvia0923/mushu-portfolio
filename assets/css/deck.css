@@ -18,6 +18,13 @@
      作品区本身要透明，才透得出那张桌布。 */
   background: none;
   border-top: 1px solid var(--gold-dim);
+  /* ⚠️ 牌堆退场时会被 translateX 推出 ±150vw（deck.js 的 --out-x）。
+     位移过的盒子会计入文档的「可滚动溢出宽度」，于是整页的横向宽度被撑到 ~976px，
+     手机浏览器随即触发「缩放适配」：整页被压到 40% 显示（桌面宽度 390 的页面
+     缩成 157），观影背景发黑、灯箱被挤到边上，全是它干的。
+     这里把溢出裁在作品区自己的框里（框宽 = 屏幕宽），牌堆看起来照旧是「飞出屏幕」，
+     但不会再把整页撑宽。 */
+  overflow-x: clip;
 }
 
 .deck__head { max-width: 44rem; margin-bottom: clamp(2.5rem, 6vw, 4.5rem); }
@@ -519,6 +526,14 @@
   inset: 0;
   z-index: var(--z-lightbox);
   display: grid;
+  /* ⚠️ 这一行是「灯箱被挤成一条窄缝」的真正修法。
+     .lightbox 是 grid 容器，里面只放一个 .lightbox__stage。
+     默认的 auto 轨道会按「子项的 max-content 宽度」来定尺寸，
+     而子项写的是 width:100%（百分比在算内在尺寸时按 auto 处理）+
+     max-width:40rem → 轨道直接取 640px，手机上（视口 393）就撑破了，
+     整页被浏览器缩放到 40%，舞台于是被摆到屏幕中间偏右、视频只剩一条 44px 的缝。
+     显式写成 minmax(0,1fr)，轨道才会老老实实取容器的可用宽度。 */
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
   padding: 1rem;                                  /* 兜底：clamp() 不被支持时也留边 */
   padding: clamp(1rem, 4vw, 3rem);
@@ -667,11 +682,13 @@ body.is-lightbox-open .scroll-cue { opacity: 0; pointer-events: none; }
 @media (max-width: 1180px) {
   .deck__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
-@media (max-width: 900px) {
-  .deck__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .deck__piles { gap: clamp(1.5rem, 5vw, 3rem); }
-
-  /* 窄屏：上面视频、下面作品档案（早先是固定右栏，手机上视频被挤成一条缝） */
+/* 灯箱单栏（上面视频、下面作品档案）。
+   断点用 980px —— 和初版一致，别再往下挪。
+   往回挪的理由：页面上只要残留一点横向溢出，手机浏览器会把布局宽度撑到 ~976px；
+   万一布局宽度落在 900~980 这一段，900 的断点就漏掉了，灯箱会退回桌面双栏
+   （视频被压成右边一条 44px 的缝、档案文字溢出屏幕 —— 就是手机上看到的那一幕）。
+   980 刚好兜住这一段。 */
+@media (max-width: 980px) {
   .lightbox {
     place-items: start center;
     overflow-y: auto;
@@ -690,6 +707,10 @@ body.is-lightbox-open .scroll-cue { opacity: 0; pointer-events: none; }
     overflow: visible;
     padding-right: 0;
   }
+}
+@media (max-width: 900px) {
+  .deck__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .deck__piles { gap: clamp(1.5rem, 5vw, 3rem); }
 }
 @media (max-width: 620px) {
   /* 两列牌阵收窄居中：留出两侧的桌布，别让牌铺满整屏把桌面全遮掉 */
