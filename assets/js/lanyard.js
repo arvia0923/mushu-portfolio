@@ -1057,7 +1057,15 @@ if (foilStrength > 0.0) {
     var settings = Object.assign({
       frontImage: null, backImage: null, frameImage: null, imageFit: 'cover', cardColor: '#1A1020',
       orientation: 'portrait', finish: 'matte', cornerRadius: 0.12, size: 0.52,
-      anchor: 'center', strapLength: 0.36, strapImage: null, strapColor: '#241631',
+      anchor: 'center',
+      /* 锚点再往右偏多少（占画布宽度的比例）。
+         ANCHORS 只有 left / center / right 三个固定档（0.27 / 0.5 / 0.73），
+         装不下「往右挪一点点」这种需求，所以单独留一个连续的偏移量。
+         0.1 = 往右挪画布宽度的 10%。
+         注意：这个偏移只改「悬挂点」，
+         画布本身的位置和大小完全不动 —— 可拖拽范围因此一点没变。 */
+      anchorOffset: 0,
+      strapLength: 0.36, strapImage: null, strapColor: '#241631',
       strapWidth: 0.8, metal: 'gold', gravity: 1, damping: 0.5, elasticity: 0.5,
       breeze: 0.5, interactive: true, intro: true,
       /* 金属雕花层 */
@@ -1283,7 +1291,8 @@ if (foilStrength > 0.0) {
       foilUniforms.foilKey.value.set(-2.5, 4, 6).normalize().transformDirection(camera.matrixWorldInverse);
       foilUniforms.foilFill.value.set(3, -1, 4).normalize().transformDirection(camera.matrixWorldInverse);
       foilUniforms.foilTop.value.set(0.5, 4.5, 8).normalize().transformDirection(camera.matrixWorldInverse);
-      var anchorX = ((ANCHORS[settings.anchor] != null ? ANCHORS[settings.anchor] : 0.5) - 0.5) * viewWidth;
+      var anchorX = ((ANCHORS[settings.anchor] != null ? ANCHORS[settings.anchor] : 0.5) - 0.5 +
+        (settings.anchorOffset || 0)) * viewWidth;
       var anchorY = viewHeight / 2 + 0.2;
       var cardTop = viewHeight / 2 - viewHeight * mix(0.12, 0.42, clamp(settings.strapLength, 0, 1));
       var hangTop = cardTop + (layout.hangY - layout.height / 2);
@@ -1314,7 +1323,7 @@ if (foilStrength > 0.0) {
         applied.framingKey = '';
       }
       var framingKey = layoutKey + '|' + settings.size + '|' + settings.anchor + '|' +
-        settings.strapLength + '|' + view.width + '|' + view.height;
+        (settings.anchorOffset || 0) + '|' + settings.strapLength + '|' + view.width + '|' + view.height;
       if (framingKey !== applied.framingKey) {
         frameView();
         if (!placed) {

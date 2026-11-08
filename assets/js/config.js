@@ -144,9 +144,17 @@ window.MS_CONFIG = {
     finish: 'matte',                            // glossy | matte | holographic | metallic
     metal: 'gold',                              // silver | gold | graphite
     cornerRadius: 0.12,
-    size: 0.437,                               // 牌面在画面里的高度占比（桌面端等效旧版尺寸，牌面实际像素大小不变）
-    widthFill: 0.36,                           // 牌面最多占画布宽度的比例（其余留给拖拽余量 = 活动范围）
+    /* 牌面大小：原 size 0.437 / widthFill 0.36 → 现在 0.3933 / 0.324，
+       牌面在屏幕上的实际尺寸 **缩小 10%**（1500×880 实测 246×342 → 224×311）。
+       size 管「牌面占画布高度的比例」，widthFill 管「牌面最多占画布宽度的比例」，
+       两个都乘 0.9，任何视口下都是同一个缩小比例。 */
+    size: 0.3933,                               // 牌面在画面里的高度占比
+    widthFill: 0.324,                           // 牌面最多占画布宽度的比例（其余留给拖拽余量 = 活动范围）
     anchor: 'center',                           // left | center | right
+    /* 悬挂点再往右偏 10%（占画布宽度的比例）。
+       画布本身的位置和大小一点没动 —— 可拖拽范围仍然是原来那一块，
+       只是牌从「挂在正中」变成「挂在偏右 10%」。 */
+    anchorOffset: 0.1,
     strapLength: 1.0,                           // 挂绳长度（越大牌垂得越低、可甩范围越大）
     strapColor: '#241631',                      // 织带颜色
     strapWidth: 0.42,                            // 挂绳粗细（参考图是细绳，太宽会压住右上角导航）
