@@ -2283,3 +2283,100 @@ powershell -ExecutionPolicy Bypass -File .\_dev\make-icons.ps1 -Base "http://loc
 
 > 提醒：浏览器对 favicon 的缓存非常顽固，改完图标可能要清一下缓存 /
 > 强制刷新（Ctrl+F5）才看得到变化。
+## 二十九 · 工作牌：牌面缩小 10% + 悬挂点右移 10%（2026-11-06，已实测，已上线）
+
+需求三条：
+
+1. 首页右侧工作牌（3D 挂绳 + 牌面）**尺寸缩小 10%**
+2. **悬挂点向右移动 10%**
+3. 但**画布不能整体移过去**，可拖拽范围必须保持现状
+
+### 关键：改「牌」，不改「画布」
+
+工作牌能拖多远，由两件事共同决定（`_dev/lanyard-harness.html` 可复现）：
+
+- 画布（WebGL 渲染视口）的宽窄
+- 牌面占画布的比例（`widthFill`）
+
+超出相机视锥的牌面**根本不渲染**，所以牌能到的左右极限 = 画布的左右边缘。
+
+如果按字面理解成「牌和画布一起右移」，画布右边缘会顶出视口 → 活动范围被切掉一截，
+正好违反第 3 条。所以做法是：
+
+| 东西 | 改没改 |
+| --- | --- |
+| 画布宽度 `--lan-w: clamp(20rem, 46vw, 46rem)` | **一点没动** |
+| 牌面尺寸 `size` 0.437 → 0.3933 | ×0.9 |
+| 牌面占宽 `widthFill` 0.36 → 0.324 | ×0.9 |
+| 悬挂点 `anchorOffset` | 新增 0.1（= 画布宽度的 10%） |
+
+`size` 和 `widthFill` 都乘 0.9，牌面在屏幕上的实际像素尺寸就是缩小 10%，
+而牌面的左右极限仍然正好触到画布两边 → **可拖拽范围与改前完全一致**。
+
+### anchorOffset 为什么是新参数
+
+`ANCHORS` 只有三档固定值：left 0.27 / center 0.5 / right 0.73。
+「往右挪一点点」这种连续偏移三档装不下，所以另开一个连续的偏移量（`assets/js/lanyard.js`）：
+
+```js
+anchorX = ((ANCHORS[anchor] - 0.5) + (settings.anchorOffset || 0)) * viewWidth
+```
+
+同时把它并进 `framingKey` —— 改了偏移必须重新构图，否则相机视角不会跟着重算，
+牌子会挂在旧位置。
+
+### 实测（`_dev/measure-lanyard.ps1`，CDP 真机模拟，量的是牌面投影尺寸）
+
+| 视口 | 画布 | 改前牌面 | 改后牌面 | 缩小 |
+| --- | --- | --- | --- | --- |
+| 1500×880 | 690×774 | 248×344 | 222×309 | -10.5% / -10.2% |
+| 1920×1080 | 883×950 | 305×422 | 272×378 | -10.8% / -10.4% |
+| 390×844（手机） | 359×743 | 130×182 | 119×165 | -8.5% / -9.3% |
+
+手机端那组偏差更大，是因为静止时牌面带一个倾角，投影宽度受倾角影响，
+实测有 ±2% 的噪声；参数本身是精确的 ×0.9。
+
+**可拖拽范围**：三个视口牌面左右极限都是画布占比 `0.000` / `1.000`，与改前逐位一致，
+全程无裁切 → 第 3 条要求满足。
+
+### 一个副作用：挂绳上端正好压到右上角「作品」
+
+悬挂点右移 69px（1500 视口）后，挂绳上端（x ≈ 1167–1193）从原来落在「首页」和
+「作品」之间的空隙，挪到了「作品」二字正后方。导航的 z-index 在挂绳之上，
+文字仍然清晰可读，但那条浅灰紫织带从字背后穿过去，背景变脏了。
+
+`config.js` 里 `strapWidth` 的注释本来就写着「太宽会压住右上角导航」，
+可选的处置有三个（都还没动，等你定）：
+
+- 把织带调细：`strapWidth` 0.42 → 更小（只影响挂绳粗细，牌的位置一点不变）
+- 让导航整体左移一点，给右角让出空间
+- 保持现状（文字仍可读，只是背景脏一点）
+
+### 已上线
+
+本轮 **已 commit + push**：`501a8c5`（`bb557ef..501a8c5`，2 files changed, +22/-5）。
+
+线上核验：
+
+- `assets/js/config.js` → 200，`size: 0.3933` / `widthFill: 0.324` / `anchorOffset: 0.1`
+- `assets/js/lanyard.js` → 200，`anchorOffset` 的三处改动都在
+- 桌面 1500×880 与手机 390×844 线上截图：牌面变小、悬挂点右移，均无异常
+
+### 附：线上验收时踩的一个坑
+
+本机 Edge 走系统代理（`127.0.0.1:7890`，mihomo），而 mihomo 到
+`stardust-mushu.fyi` 的 TLS 握手会失败 —— 用 Edge 打开线上站点直接
+`ERR_CONNECTION_CLOSED`，但 `curl`（不走系统代理）一切正常。
+
+所以线上 CDP 验收要另起一个**不走代理**的 Edge 实例：
+
+```powershell
+Start-Process -FilePath 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe' -ArgumentList @(
+  '--headless=new', '--remote-debugging-port=9241', '--user-data-dir=D:\TEMP\edge-online-noproxy',
+  '--no-first-run', '--no-default-browser-check', '--disable-gpu', '--no-proxy-server', 'about:blank'
+) -WindowStyle Hidden
+```
+
+另外用同一个 `--user-data-dir` 换端口重开 Edge 是不行的：单实例机制会把新进程
+吞掉，新端口根本不会监听（`Invoke-RestMethod` 直接「无法连接到远程服务器」）。
+换端口就要换 profile 目录。
