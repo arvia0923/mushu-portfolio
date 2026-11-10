@@ -200,6 +200,33 @@ button { font: inherit; color: inherit; }
 }
 .doc__p { color: var(--text-300); max-width: var(--measure); }
 
+/* 关于页改双栏。
+   原来是单栏一条到底：每一节都被拉得很长，框比字长太多，看着空。
+   现在拆成两栏独立往下排 —— 左栏「现在做什么 / 怎么想 / 用什么」，
+   右栏「履历 / 产出 / 资质」，两栏各自的高度差不大，整页短了一大截。 */
+.doc--split {
+  max-width: 78rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(2.2rem, 5vw, 4.2rem);
+  align-items: start;
+}
+.doc__col { min-width: 0; }
+/* 双栏后节与节之间收紧一档（原来上下各留 3.4rem，一屏塞不下两节） */
+.doc--split .doc__sec + .doc__sec {
+  margin-top: clamp(1.7rem, 3.4vw, 2.4rem);
+  padding-top: clamp(1.7rem, 3.4vw, 2.4rem);
+}
+@media (max-width: 900px) {
+  .doc--split { grid-template-columns: 1fr; }
+  /* 叠回单栏时，两列之间要补一条分隔线，不然两段会黏在一起 */
+  .doc--split .doc__col + .doc__col {
+    margin-top: clamp(2.2rem, 6vw, 3.2rem);
+    padding-top: clamp(2.2rem, 6vw, 3.2rem);
+    border-top: 1px solid var(--gold-dim);
+  }
+}
+
 /* 信息卡：左边一道暗金，底色微微提亮 */
 .work {
   margin: 0 0 1rem;
