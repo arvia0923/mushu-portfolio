@@ -4,7 +4,7 @@
 （含金属雕花边框 / 银色曼陀罗背面）**、**占卜桌布作品区背景**、**首页 ⇄ 站点
 交叉淡化不可逆切换**、**灯箱作品档案面板**、**九张新封面套塔罗金框**、
 **滚动惯性（停手后视频平滑减速）**、**工作牌边界约束（拖到哪都完整显示）**、
-**单栏分节的关于我 / 联系方式 + 抖音二维码**。
+**双栏分节的关于我 / 紧凑三栏的联系方式 + 抖音二维码**。
 
 > **站名**：牧舒的捕梦阁楼　|　首页标题：幻象陈列室 / The Illusion Cabinet
 
@@ -12,18 +12,18 @@
 
 ## 〇、想改前端上的文字？改这两个地方就够了
 
-| 想改什么                                | 改哪个文件                   | 具体位置                                                         |
-| ----------------------------------- | ----------------------- | ------------------------------------------------------------ |
-| 九件作品的**标题 / 年份 / 类型 / 分辨率 / 一句话简介** | `assets/js/works.js`    | 每件作品对象里的 `title` `year` `type` `res` `blurb`                 |
-| 九件作品的**详细正文**（背景 / 做法 / 反思）         | `assets/js/works.js`    | 每件作品对象里的 `detail: { lead, sections: [...] }`                 |
-| **关于我**整页（简历、经历、信条、证书）              | `index.html`            | `<section class="page" id="about">` 里的 `.doc`（单栏分节）              |
+| 想改什么                                | 改哪个文件                   | 具体位置                                                                       |
+| ----------------------------------- | ----------------------- | -------------------------------------------------------------------------- |
+| 九件作品的**标题 / 年份 / 类型 / 分辨率 / 一句话简介** | `assets/js/works.js`    | 每件作品对象里的 `title` `year` `type` `res` `blurb`                               |
+| 九件作品的**详细正文**（背景 / 做法 / 反思）         | `assets/js/works.js`    | 每件作品对象里的 `detail: { lead, sections: [...] }`                               |
+| **关于我**整页（简历、经历、信条、证书）              | `index.html`            | `<section class="page" id="about">` 里的 `.doc--split`（双栏分节）                |
 | **联系方式**整页                          | `index.html`            | `<section class="page page--contact" id="contact">` 里的 `.page__cols`（紧凑三栏） |
-| 首页**标题 / 副标题 / 引言**                 | `index.html`            | `.hero__lede` 里的 `kicker` / `h1.hero__title` / `p.hero__sub` |
-| 导航**栏目名**                           | `index.html`            | `<nav class="masthead__nav">` 里的四个 `<a>`（文字包在 `.masthead__label` 里） |
-| 导航**字体 / 间距 / 小符号**                | `assets/css/hero.css`   | `.masthead__nav`；字体栈在 `tokens.css` 的 `--font-nav`                |
-| 工作牌上的**名字 / 身份 / 卡背文案**            | `assets/js/config.js`   | `lanyard` 段的 `name` / `role` / `backKicker`~`backFoot` / `backDim` |
-| 页面**配色 / 字体 / 节奏**                  | `assets/css/tokens.css` | 全部设计令牌                                                       |
-| 交互**手感**（滚动灵敏度、淡化时长、工作牌大小…）         | `assets/js/config.js`   | 见第三节参数表                                                      |
+| 首页**标题 / 副标题 / 引言**                 | `index.html`            | `.hero__lede` 里的 `kicker` / `h1.hero__title` / `p.hero__sub`               |
+| 导航**栏目名**                           | `index.html`            | `<nav class="masthead__nav">` 里的四个 `<a>`（文字包在 `.masthead__label` 里）        |
+| 导航**字体 / 间距 / 小符号**                 | `assets/css/hero.css`   | `.masthead__nav`；字体栈在 `tokens.css` 的 `--font-nav`                          |
+| 工作牌上的**名字 / 身份 / 卡背文案**             | `assets/js/config.js`   | `lanyard` 段的 `name` / `role` / `backKicker`~`backFoot` / `backDim`         |
+| 页面**配色 / 字体 / 节奏**                  | `assets/css/tokens.css` | 全部设计令牌                                                                     |
+| 交互**手感**（滚动灵敏度、淡化时长、工作牌大小…）         | `assets/js/config.js`   | 见第三节参数表                                                                    |
 
 > **和 vault 的关系**：站点**不会**自动读 Obsidian 笔记。
 > `作品集/作品条目/*.md` 改完之后，要手动把内容同步到 `assets/js/works.js`
@@ -2380,3 +2380,156 @@ Start-Process -FilePath 'C:\Program Files (x86)\Microsoft\Edge\Application\msedg
 另外用同一个 `--user-data-dir` 换端口重开 Edge 是不行的：单实例机制会把新进程
 吞掉，新端口根本不会监听（`Invoke-RestMethod` 直接「无法连接到远程服务器」）。
 换端口就要换 profile 目录。
+## 三十 · 「关于我」页：按新简历改文案 + 改成双栏（2026-11-11，已实测，已上线）
+
+这轮是拿着**更新后的 PDF 简历**提的需求：把「关于我」整页的文案对齐简历，
+并且「每一栏都长度那么长，但里面的文字却并没有写得和框架那么长」—— 改成双栏。
+
+### 文案改动（`index.html`）
+
+| 位置 | 改动 |
+| --- | --- |
+| 页面第一句 | 「我是刘昶红，**「昶」和「敞」同音，是不夜天的意思**。当然，你也可以叫我牧舒。」 |
+| 我在做什么 | 新增一条 **短视频 / 内容策划**（简历里的内容创作能力：选题 → 脚本 → 素材 → 剪辑） |
+| 幼教 / 讲故事的 | 补上简历里的 **「全国儿童艺术教育创作辅导二等奖」** |
+| 经历 · 树华美术 | 补 **班级作品完成率 100%** |
+| 经历 · 师范大学 | 补 **曾任班长、团支部书记，获评优秀共青团员、三好学生** |
+| 做过的东西 | **新增第三条「牧舒的捕梦阁楼 · 这个网站」** |
+| 证书 | 补 **中共党员**；「去过 20+ 城市」→ **走访过国内 20+ 座城市** |
+
+「做过的东西」新增的那条：
+
+> 现在又多了一条——花三天时间做出了这个网站：一间午夜暗室、一张牌桌，还有一只会自己摆动的 3D 工作牌。
+
+### 双栏怎么排的
+
+原来 `.doc` 是单栏一条到底：六个小节各占一大段，框比字长很多。
+现在 `base.css` 新增 `.doc--split` / `.doc__col`，把六节拆成两栏，各自往下排：
+
+- **左栏**：我在做什么 / 一些信条 / 工具箱 / 证书
+- **右栏**：经历 / 做过的东西
+
+节间距也从上下各 `3.4rem` 收到各 `2.4rem`。窄于 900px 自动叠回单栏，
+两栏之间会补一条分隔线。
+
+「证书」本来在右栏，量出来左栏 966 / 右栏 1224 差了 258px；
+挪到左栏后变成 1147 / 1058（差 89px），而且右栏正好收尾在「做过的东西」——最想让人看的那一节。
+
+### 实测（`_dev/shot-section.ps1`，CDP 真机模拟）
+
+| | 改前 | 改后 |
+| --- | --- | --- |
+| 关于我整页高度（1500×880） | 2529px | **1638px**（-35%） |
+| 左栏 / 右栏高度 | — | 1147 / 1058（差 89px，基本配平） |
+| 手机端 390×844 | — | `scrollWidth = clientWidth = 390`，缩放比 1.000，无横向溢出 |
+
+回归：联系页 752px，不受影响；手机端牌阵 / 灯箱照旧（`scrollWidth` 仍是 390，没触发缩放）。
+
+### 新写的自测脚本：`_dev/shot-section.ps1`
+
+以前只能截首页，截不到「关于我」这种锚点区块 —— 因为这个站是**双视图**结构，
+路由是点击式的（`main.js` 的 `initAnchors` 拦截 `a[href^="#"]`），
+直接开 `#about` 不会切视图，截出来的是首页。
+
+新脚本的做法：
+
+1. `window.MSView.toSite(function(){ window.MSView.scrollToId('about'); })` 先切到站点视图
+2. 量出目标区块的高度
+3. **把视口拉高到刚好装下整个区块**（`Emulation.setDeviceMetricsOverride`），再滚过去
+4. 一次截全，不用拼图
+
+### 踩的坑
+
+**① 含中文的 `.ps1` 必须是 UTF-8 BOM。**
+PowerShell 5.1 没有 BOM 就按 ANSI 读，`@"..."@` here-string 里的中文会被拆坏，
+整个脚本解析失败（报「An expression was expected after '('」）。写完补一下 BOM：
+
+```powershell
+[System.IO.File]::WriteAllText($p, $t, (New-Object System.Text.UTF8Encoding($true)))
+```
+
+**② 用 `powershell -File` 传带括号的 JS 字符串会被参数解析吃掉。**
+`-PreJs "(function(){...})()"` 会把整条命令 abort 掉。改成脚本内置开关（`-GoSite`）。
+
+**③ 同一个 `--user-data-dir` 不能换端口重开 Edge。**
+单实例机制会把新进程吞掉，新端口根本不监听（`Invoke-RestMethod` 报「无法连接到远程服务器」）。
+换端口就要换 profile 目录。
+
+### 已上线
+
+本轮 **已 commit + push**（见 commit 说明），线上核验：双栏渲染正确、
+移动端无横向溢出、联系页与作品区无回归。
+## 三十一 · 上线到底需不需要梯子（2026-11-11，实测结论）
+
+**结论先说：不需要。开着梯子反而会让「用 Edge 打开自己的线上站点」间歇性失败。**
+下次要上线，直接不开梯子就行。
+
+### 站点上线的链路
+
+```
+本地 git push (SSH → github.com:22)
+   ↓
+GitHub 仓库
+   ↓
+Cloudflare Pages 监听到 push，在 Cloudflare 自己的服务器上构建 + 发布
+   ↓
+stardust-mushu.fyi / mushu-portfolio.pages.dev 自动指向新版本
+```
+
+**本地全程只做一件事：SSH push。** 中间两段都跑在别人的服务器上，
+本地网络完全不参与（`_dev/deploy.ps1` 干的事就是 `git add` → `commit` → `push`，
+push 完就打「等 Cloudflare 构建完成」）。
+
+而 **SSH 不使用 Windows 的系统代理**（git 的 `GIT_SSH_COMMAND` 是独立的一条通道），
+所以梯子开不开，这一步的结果完全一样。
+
+### 实测（本机 mihomo，127.0.0.1:7890，系统代理 `ProxyEnable=1`）
+
+| 目标 | 直连 | 走系统代理 |
+| --- | --- | --- |
+| `stardust-mushu.fyi` | 200 | **时通时不通**（这轮先 exit 35 TLS 握手失败，后一次又 200） |
+| `mushu-portfolio.pages.dev` | 200 | 200 |
+| `api.github.com` | 200 | **FAIL** |
+| `raw.githubusercontent.com` | 301 | 301 |
+| `codeload.github.com` | 301 | 301 |
+| `api.cloudflare.com` | 301 | 301 |
+| `github.com` | 时通时不通（与代理无关） | 时通时不通 |
+| `www.google.com` | FAIL | FAIL（超时） |
+
+结论：
+
+- 部署需要的每一个域名，**直连都通**，代理没有任何增益
+- 反倒是代理会把 `api.github.com` 弄挂
+- 你自己的站点域名在代理下**不稳定** —— TLS 握手被节点搅黄
+
+### 真正被代理坑到的是「验收」，不是「部署」
+
+**Edge 会读 Windows 的系统代理设置，curl 不会**（curl 只认 `HTTP_PROXY` /
+`HTTPS_PROXY` 环境变量，这台机器上没设）。所以：
+
+- `curl https://stardust-mushu.fyi/` → 200（走的是直连）
+- Edge 打开 `https://stardust-mushu.fyi` → **走代理** → 代理的 TLS 握手失败 →
+  浏览器直接报 `ERR_CONNECTION_CLOSED`
+
+表现得很像「网站挂了」，其实是代理的问题。两种解法：
+
+1. **验收时给 Edge 加 `--no-proxy-server`**（我一直在这么做）
+2. **直接把梯子关掉** —— 直连本来就通，关掉之后 Edge 访问自己的站点也就正常了
+
+### 顺带收紧的私钥权限
+
+部署私钥 `D:\TEMP\moodshot\deploy\mushu_deploy` 原来的 ACL 带着
+`NT AUTHORITY\Authenticated Users:(M)`（继承来的可修改权限）—— 任何本机用户都能改你的私钥。
+已收紧为只剩本人只读 + SYSTEM / Administrators 完全控制。
+
+注意：**Windows 自带的 `ssh.exe` 对这个检查比 Git 自带的严格**。
+收紧之前用 Windows 版 `ssh -T` 会报
+`Bad permissions. Try removing permissions for user: NT AUTHORITY\Authenticated Users`，
+而 `git push` 却一直正常 —— 因为 `deploy.ps1` 把 Git 的 `usr\bin` 放在 PATH 最前面，
+用的是 Git 自带的 ssh。收紧之后两条路都通了。
+
+### 结论
+
+- **部署：不需要梯子**（SSH 直连，跟系统代理无关）
+- **验收：更不需要梯子**（关掉最好；开着就记得给 Edge 加 `--no-proxy-server`）
+- 唯一受影响的是 `www.google.com` 这类被墙的站点 —— 但上线用不上
